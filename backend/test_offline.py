@@ -392,6 +392,55 @@ loan_assessment = calculate_fraud_risk({
 check("T26m: Loan extortion includes Section 308/351 BNS (Extortion)",
       any("308" in s or "Extortion" in s for s in loan_assessment["legal_guidance"]["bns_sections"]))
 
+# ── T27: Document Session Isolation & Distinct Document Type Analysis ────────
+from main import LEGAL_DOCUMENTS
+
+# Sample OCR text corresponding to User's Doc 1 (FIR)
+fir_sample_text = """
+(a173)
+oo:XLV Addl. Chief Judicial Magistrate, Bengaluru City
+1. :Bengaluru City
+:DCP North Division
+North CEN Crime PS
+0788/2025
+Date: 28/11/2025
+2. INFORMATION TECHNOLOGY ACT 2000 (U/s-66(C))
+3. Date: 27/11/2025 09:00:00 to 10:30:00
+ONLINE, Bengaluru City, Karnataka
+5. ARAVINDA S/O SETHURAO
+"""
+
+# Sample OCR text corresponding to User's Doc 2 (Gazette)
+gazette_sample_text = """
+No. 1077
+RDPR 172 ZPS 2023
+Date: 09.10.2026
+KARNATAKA GRAMA SWARAJ AND PANCHAYAT RAJ ACT 1993
+Section 162
+Objections deadline: 19.10.2026 5:00 PM
+Tumakuru Zilla Panchayat
+"""
+
+fir_struct = analyze_and_structure_notice(fir_sample_text, language="kn-IN")
+check("T27a: FIR document is categorized as is_fir: True", fir_struct.get("is_fir") is True)
+check("T27b: FIR document is NOT categorized as gazette", fir_struct.get("is_gazette") is False)
+check("T27c: FIR key allegations cite North CEN Crime PS and Crime No 0788/2025",
+      any("0788/2025" in a for a in fir_struct["key_allegations"]) and
+      any("CEN" in a for a in fir_struct["key_allegations"]))
+check("T27d: FIR key allegations cite Section 66(C)",
+      any("66(C)" in a for a in fir_struct["key_allegations"]))
+
+gazette_struct = analyze_and_structure_notice(gazette_sample_text, language="kn-IN")
+check("T27e: Gazette document is categorized as is_gazette: True", gazette_struct.get("is_gazette") is True)
+check("T27f: Gazette document is NOT categorized as FIR", gazette_struct.get("is_fir") is False)
+check("T27g: Gazette key allegations cite RDPR 172 ZPS 2023",
+      any("RDPR" in a for a in gazette_struct["key_allegations"]))
+
+# Test backend session isolation & purge
+LEGAL_DOCUMENTS["test_old_doc"] = {"document_id": "test_old_doc", "filename": "old.pdf"}
+LEGAL_DOCUMENTS.clear()
+check("T27h: LEGAL_DOCUMENTS purged cleanly to isolate sessions", len(LEGAL_DOCUMENTS) == 0)
+
 # ─── Summary ──────────────────────────────────────────────────────────────────
 print()
 total = PASSED + FAILED

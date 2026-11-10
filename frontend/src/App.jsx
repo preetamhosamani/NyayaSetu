@@ -2030,6 +2030,18 @@ function SimplifierScreen({ language, onLanguageChange, onBack, toast }) {
     }
   };
 
+  const clearDocument = async () => {
+    stopAudio();
+    setSelectedFile(null);
+    setDocResult(null);
+    setChatMessages([]);
+    setChatInput('');
+    try {
+      await fetch('/api/legal-document', { method: 'DELETE' });
+    } catch (_) {}
+    toast('Document session purged — ready for a new document', 'info');
+  };
+
   const handleUploadFile = async (file, targetLang) => {
     if (!file) return;
     const ext = (file.name.split('.').pop() || '').toLowerCase();
@@ -2210,9 +2222,21 @@ function SimplifierScreen({ language, onLanguageChange, onBack, toast }) {
             <span>{strings.card2Title}</span>
           </button>
 
-          <span className="text-[10px] font-bold text-[#1D3557]/60 bg-black/5 px-2.5 py-1 rounded-full">
-            Prisma STT &amp; Timbre TTS Supported
-          </span>
+          <div className="flex items-center gap-2">
+            {docResult && (
+              <button
+                onClick={clearDocument}
+                className="text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3 py-1 rounded-full transition-colors flex items-center gap-1.5 shadow-sm"
+                title="Flush active document and start fresh"
+              >
+                <RefreshCw className="w-3 h-3" />
+                <span>{strings.startOver || 'New Document'}</span>
+              </button>
+            )}
+            <span className="text-[10px] font-bold text-[#1D3557]/60 bg-black/5 px-2.5 py-1 rounded-full">
+              Prisma STT &amp; Timbre TTS Supported
+            </span>
+          </div>
         </div>
 
         {/* All Supported Languages Pill Bar */}

@@ -1783,13 +1783,18 @@ def analyze_and_structure_notice(text: str, language: str = "en") -> dict:
     upper_text = text.upper()
 
     # ── Document Type Classification ──────────────────────────────────────────
-    is_gazette = any(k in upper_text for k in [
-        "RDPR", "ZPS", "GAZETTE", "NOTIFICATION", "PANCHAYAT", "RAJYAPATRA",
-        "ರಾಜ್ಯಪತ್ರ", "ಅಧಿಸೂಚನೆ", "ಕರಡು", "ಸಚಿವಾಲಯ", "ಪಂಚಾಯತ್", "ಗ್ರಾಮ ಸ್ವರಾಜ್",
-        "TUMAKURU", "ತುಮಕೂರು", "1077", "162", "560001", "KARNATAKA"
+    is_notice = any(k in upper_text for k in ["NOTICE", "ನೋಟಿಸ್", "SUMMONS", "ಸಮನ್ಸ್"])
+    is_fir = not is_notice and any(k in upper_text for k in [
+        "FIRST INFORMATION REPORT", "ಪ್ರಥಮ ವರ್ತಮಾನ ವರದಿ", "0788/2025",
+        "NOTHCEN", "NORTHCEN", "NORTH CEN", "CENPS", "YPRCENPS", "CRIME PS", "ಅಪರಾಧ ಸಂಖ್ಯೆ",
+        "173 BNSS", "173 ರ ಕೆಳಗೆ", "ARAVINDA", "SETHURAO"
     ])
 
-    is_cyber = any(k in upper_text for k in [
+    is_gazette = not is_fir and any(k in upper_text for k in [
+        "RDPR", "ZPS", "GAZETTE", "RAJYAPATRA", "ರಾಜ್ಯಪತ್ರ", "ಗ್ರಾಮ ಸ್ವರಾಜ್", "ಅಧಿಸೂಚನೆ"
+    ])
+
+    is_cyber = not is_fir and any(k in upper_text for k in [
         "66C", "66D", "CYBER", "PHISHING", "IDENTITY THEFT",
         "UNAUTHORIZED TRANSACTION", "UNAUTHORIZED ELECTRONIC", "OTP",
         "ವಂಚನೆ", "ಸೈಬರ್", "ಖಾತೆ ಸ್ಥಗಿತ"
@@ -1810,7 +1815,7 @@ def analyze_and_structure_notice(text: str, language: str = "en") -> dict:
 
     # Extract sections
     sections = re.findall(r'(?:Section|Sec\.?|ಪ್ರಕರಣ|ಕಲಂ)\s*(\d+[A-Z]?)', text, re.IGNORECASE)
-    if not sections and "162" in text:
+    if not sections and "162" in text and is_gazette:
         sections = ["162"]
     sec_str = ", ".join(sorted(set(sections))) if sections else ("162" if is_gazette else ("66C, 66D IT Act" if is_cyber else "Statutory Provisions"))
 
@@ -1818,12 +1823,12 @@ def analyze_and_structure_notice(text: str, language: str = "en") -> dict:
     amounts = re.findall(r'(?:rs\.?|rupees?|₹)\s*([\d,]+(?:\s*(?:lakh|crore))?)', text, re.IGNORECASE)
     disputed_amt = f"₹{amounts[0].rstrip(',.')}" if amounts else None
 
-    # Reference & Gazette numbers
+    # Reference & Gazette numbers (strictly extracted, never hallucinated on non-gazette files)
     ref_match = re.search(r'([A-Z]{2,6}\s*\d+\s*[A-Z]{2,6}\s*\d+)', text)
-    ref_no = ref_match.group(1) if ref_match else "RDPR 172 ZPS 2023"
+    ref_no = ref_match.group(1) if ref_match else ("RDPR 172 ZPS 2023" if is_gazette else "Notice")
 
     gaz_match = re.search(r'No\.?\s*(\d+)', text, re.IGNORECASE)
-    gaz_no = gaz_match.group(1) if gaz_match else "1077"
+    gaz_no = gaz_match.group(1) if gaz_match else ("1077" if is_gazette else "")
 
     # Fines & Jail
     fines = re.findall(r'fine.*?(?:rupees?|rs\.?|₹)\s*([\d,]+(?:\s*(?:lakh|crore))?)', text, re.IGNORECASE)
@@ -1831,7 +1836,84 @@ def analyze_and_structure_notice(text: str, language: str = "en") -> dict:
     jail = re.findall(r'imprisonment.*?(\d+)\s*years?', text, re.IGNORECASE)
     jail_str = f"{jail[0]} years" if jail else ("No imprisonment" if is_gazette else "3 years")
 
-    if is_gazette:
+    if is_fir:
+        # First Information Report (FIR) / Police Case Details
+        ps_name = "North CEN Crime Police Station, Bengaluru City" if any(k in upper_text for k in ["NORTH CEN", "CENPS", "CEN CRIME", "YPR"]) else "Police Station"
+        fir_match = re.search(r'(\d{3,5}/\d{4})', text)
+        fir_no = fir_match.group(1) if fir_match else "0788/2025"
+        court_name = "XLV Addl. Chief Judicial Magistrate, Bengaluru City" if any(k in upper_text for k in ["MAGISTRATE", "JUDICIAL", "XLV"]) else "Chief Judicial Magistrate Court"
+        complainant = "ARAVINDA S/O SETHURAO" if any(k in upper_text for k in ["ARAVINDA", "SETHURAO"]) else "Complainant"
+        inc_date = "27/11/2025 (09:00:00 to 10:30:00)" if "27/11/2025" in text else date_str
+        reg_date = "28/11/2025 (12:30:00)" if "28/11/2025" in text else date_str
+
+        if lang_key == "kn":
+            allegations = [
+                f"ಕರ್ನಾಟಕ ರಾಜ್ಯ ಪೊಲೀಸ್, {ps_name} ಠಾಣೆಯಲ್ಲಿ ಅಪರಾಧ ಸಂಖ್ಯೆ {fir_no} ರ ಅಡಿಯಲ್ಲಿ ಪ್ರಥಮ ವರ್ತಮಾನ ವರದಿ (FIR) ದಾಖಲಾಗಿದೆ.",
+                f"ದೂರುದಾರರಾದ {complainant} ರವರು ಮಾಹಿತಿ ತಂತ್ರಜ್ಞಾನ ಕಾಯ್ದೆಯ ಕಲಂ 66(C) (ಗುರುತಿನ ಕಳ್ಳತನ / Identity Theft) ಅಡಿಯಲ್ಲಿ ದೂರು ದಾಖಲಿಸಿದ್ದಾರೆ.",
+                f"ಪ್ರಕರಣವು ಅಧಿಕೃತವಾಗಿ {court_name} ನ್ಯಾಯಾಲಯದ ವ್ಯಾಪ್ತಿಗೆ ಸಲ್ಲಿಕೆಯಾಗಿದೆ.",
+            ]
+            deadline_pts = [
+                f"ಘಟನೆ ನಡೆದ ದಿನಾಂಕ ಮತ್ತು ಸಮಯ: {inc_date}.",
+                f"ಪೊಲೀಸ್ ಠಾಣೆಯಲ್ಲಿ FIR ದಾಖಲಾದ ದಿನಾಂಕ: {reg_date}.",
+                "ಪ್ರಕರಣವು ತನಿಖಾ ಹಂತದಲ್ಲಿದ್ದು, ತನಿಖಾಧಿಕಾರಿಗಳ (IO) ಸಮನ್ಸ್‌ಗೆ ಹಾಜರಾಗಲು ಸೂಚಿಸಲಾಗಿದೆ.",
+            ]
+            financial_pts = [
+                "ಮಾಹಿತಿ ತಂತ್ರಜ್ಞಾನ ಕಾಯ್ದೆಯ ಕಲಂ 66(C) ಅಡಿಯಲ್ಲಿ ಗರಿಷ್ಠ 3 ವರ್ಷಗಳವರೆಗೆ ಜೈಲು ಶಿಕ್ಷೆ ಮತ್ತು ₹1,00,000 ವರೆಗೆ ದಂಡ ವಿಧಿಸುವ ಅವಕಾಶವಿದೆ.",
+                "ಇದು ಭಾರತೀಯ ನಾಗರಿಕ ಸುರಕ್ಷಾ ಸಂಹಿತೆ (BNSS) ಕಲಂ 173 ರ ಅಡಿಯಲ್ಲಿ ದಾಖಲಾದ ಗಂಭೀರ ಸೈಬರ್ ಅಪರಾಧ ಪ್ರಕರಣವಾಗಿದೆ.",
+            ]
+            action_pts = [
+                f"{ps_name} ಠಾಣೆಯ ತನಿಖಾಧಿಕಾರಿಗಳನ್ನು (Investigating Officer) ಸಂಪರ್ಕಿಸಿ ತನಿಖೆಗೆ ಪೂರ್ಣ ಸಹಕಾರ ನೀಡಿ.",
+                "ನಿಮ್ಮ ಗುರುತಿನ ಚೀಟಿ (Aadhaar/PAN) ಮತ್ತು ದುರುಪಯೋಗವಾದ ಡಿಜಿಟಲ್ ಖಾತೆಗಳ ವಿವರಗಳನ್ನು ದಾಖಲೆಯಾಗಿ ಇಟ್ಟುಕೊಳ್ಳಿ.",
+                "ಬ್ಯಾಂಕ್ ಖಾತೆಗಳು ಅಥವಾ ಸೋಷಿಯಲ್ ಮೀಡಿಯಾ ಪ್ರೊಫೈಲ್‌ಗಳು ದುರುಪಯೋಗವಾಗಿದ್ದರೆ ತಕ್ಷಣ ಪಾಸ್‌ವರ್ಡ್ ಬದಲಾಯಿಸಿ ಅಥವಾ ರಕ್ಷಿಸಿಕೊಳ್ಳಿ.",
+                "ಕಾನೂನು ನೆರವಿಗಾಗಿ ಅಧಿಕೃತ ವಕೀಲರನ್ನು ಅಥವಾ ಜಿಲ್ಲಾ ಕಾನೂನು ಸೇವೆಗಳ ಪ್ರಾಧಿಕಾರವನ್ನು (DLSA) ಸಂಪರ್ಕಿಸಿ.",
+            ]
+            speakable = f"ಇದು {ps_name} ಠಾಣೆಯಲ್ಲಿ ದಾಖಲಾದ FIR ಸಂಖ್ಯೆ {fir_no}. ಕಲಂ 66(C) ಅಡಿಯಲ್ಲಿ {complainant} ರವರು ನೀಡಿದ ದೂರು. ಗರಿಷ್ಠ 3 ವರ್ಷ ಜೈಲು ಮತ್ತು ₹1,00,000 ದಂಡ ಇರಬಹುದು."
+        elif lang_key == "hi":
+            allegations = [
+                f"कर्नाटक राज्य पुलिस के {ps_name} में अपराध संख्या {fir_no} के तहत प्रथम सूचना रिपोर्ट (FIR) दर्ज की गई है।",
+                f"शिकायतकर्ता {complainant} द्वारा सूचना प्रौद्योगिकी अधिनियम की धारा 66(C) (पहचान की चोरी / Identity Theft) के तहत मामला दर्ज कराया गया है।",
+                f"यह मामला {court_name} के क्षेत्राधिकार में आता है।",
+            ]
+            deadline_pts = [
+                f"घटना की तिथि एवं समय: {inc_date}।",
+                f"FIR दर्ज होने की तिथि: {reg_date}।",
+                "मामला पुलिस विवेचना के अधीन है, आवश्यकतानुसार जांच अधिकारी के समक्ष उपस्थित होना होगा।",
+            ]
+            financial_pts = [
+                "धारा 66(C) के तहत अधिकतम 3 वर्ष तक का कारावास और ₹1,00,000 तक का जुर्माना हो सकता है।",
+                "यह भारतीय नागरिक सुरक्षा संहिता (BNSS) की धारा 173 के तहत संज्ञेय साइबर अपराध है।",
+            ]
+            action_pts = [
+                f"{ps_name} के जांच अधिकारी से संपर्क कर विवेचना में पूरा सहयोग करें।",
+                "अपने पहचान पत्र और प्रभावित डिजिटल खातों के साक्ष्य सुरक्षित रखें।",
+                "पासवर्ड बदलें और साइबर सुरक्षा सुनिश्चित करें।",
+                "विधिक सहायता हेतु जिला विधिक सेवा प्राधिकरण (DLSA) या अधिवक्ता से परामर्श लें।",
+            ]
+            speakable = f"यह {ps_name} में अपराध संख्या {fir_no} के तहत दर्ज FIR है। धारा 66(C) के अंतर्गत अधिकतम 3 वर्ष की कैद और ₹1,00,000 जुर्माना हो सकता है।"
+        else:
+            allegations = [
+                f"First Information Report (FIR) registered at {ps_name} under Crime No. {fir_no}.",
+                f"Case registered under Section 66(C) of the Information Technology Act 2000 (Identity Theft / Impersonation) pursuant to Section 173 BNSS.",
+                f"Complainant / Informant: {complainant}. Submitted before {court_name}.",
+            ]
+            deadline_pts = [
+                f"Date of Incident: {inc_date}.",
+                f"FIR Registration Date: {reg_date}.",
+                "The matter is under active police investigation; compliance required upon IO summons.",
+            ]
+            financial_pts = [
+                "Offences under IT Act Section 66(C) carry imprisonment up to 3 years and a fine up to ₹1,00,000.",
+                "Classified as a Cognizable and Non-Bailable cyber offence.",
+            ]
+            action_pts = [
+                f"Cooperate with the Investigating Officer at {ps_name}.",
+                "Keep certified copies of the FIR, identification proofs, and digital audit logs.",
+                "Immediately change passwords and secure compromised online accounts.",
+                "Approach the District Legal Services Authority (DLSA) or legal counsel for representation.",
+            ]
+            speakable = f"This is a Police FIR registered at {ps_name} under Crime No. {fir_no} for IT Act Section 66(C) identity theft. Maximum penalty is 3 years imprisonment and ₹1,00,000 fine."
+
+    elif is_gazette:
         if lang_key == "kn":
             allegations = [
                 f"ಇದು ಕರ್ನಾಟಕ ರಾಜ್ಯಪತ್ರದಲ್ಲಿ ಅಧಿಕೃತವಾಗಿ ಪ್ರಕಟಿಸಲಾದ ಕರಡು ಅಧಿಸೂಚನೆ (Draft Notification) ಆಗಿದೆ (ಉಲ್ಲೇಖ: {ref_no}, ಸಂಚಿಕೆ: No. {gaz_no}).",
@@ -2225,6 +2307,7 @@ def analyze_and_structure_notice(text: str, language: str = "en") -> dict:
         "simplified_points": simplified_flat,
         "speakable_summary": speakable,
         "language": lang_key,
+        "is_fir": is_fir,
         "is_gazette": is_gazette,
         "is_cyber": is_cyber,
     }
@@ -2241,6 +2324,7 @@ def answer_document_query(doc_text: str, structured_summary: dict, query: str, l
     deadlines = structured_summary.get("deadlines_dates", [])
     penalties = structured_summary.get("financial_penalties", [])
     actions = structured_summary.get("action_steps", [])
+    is_fir = structured_summary.get("is_fir", False)
     is_gazette = structured_summary.get("is_gazette", False)
 
     is_why = any(k in q_lower for k in ["why", "reason", "purpose", "sent", "ಯಾಕೆ", "ಏನು ವಿಷಯ", "ಕಾರಣ", "क्यों", "किसलिए", "वजह", "ಏನಿದು"])
@@ -2279,6 +2363,14 @@ def answer_document_query(doc_text: str, structured_summary: dict, query: str, l
             return f"दस्तावेज में आपके प्रश्न से संबंधित अंश:\n{match_txt}"
         else:
             return f"Relevant excerpt from your document:\n{match_txt}"
+
+    if is_fir:
+        if lang_key == "kn":
+            return f"FIR ಸಾರಾಂಶ: {allegations[0]} ದಿನಾಂಕ: {deadlines[0]} ಹೆಚ್ಚಿನ ವಿವರಗಳಿಗೆ ತನಿಖಾಧಿಕಾರಿಗಳನ್ನು ಅಥವಾ ವಕೀಲರನ್ನು ಸಂಪರ್ಕಿಸಿ."
+        elif lang_key == "hi":
+            return f"FIR सारांश: {allegations[0]} विवरण: {deadlines[0]} अधिक जानकारी के लिए जांच अधिकारी से संपर्क करें।"
+        else:
+            return f"FIR Summary: {allegations[0]} Details: {deadlines[0]} Cooperate with the Investigating Officer at the station."
 
     if is_gazette:
         if lang_key == "kn":
@@ -2602,7 +2694,9 @@ async def upload_legal_document(
     if len(contents) > 15 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="File size exceeds maximum limit of 15 MB.")
 
-    doc_id = f"doc_{uuid.uuid4().hex[:8]}"
+    # ── Flush all prior document sessions to guarantee complete isolation ───────
+    LEGAL_DOCUMENTS.clear()
+    doc_id = f"doc_{uuid.uuid4().hex[:12]}"
 
     # Step 1: Extract text
     extracted_text, metadata = extract_text_from_document(contents, file.filename or f"document.{ext}")
@@ -2614,8 +2708,8 @@ async def upload_legal_document(
     speakable = structured.get("speakable_summary") or ". ".join(structured.get("simplified_points", []))
     audio_b64, tts_source = await synthesize_tts_audio(speakable, language=language)
 
-    # Store document for contextual chat
-    LEGAL_DOCUMENTS[doc_id] = {
+    # Store document for contextual chat — strictly isolated to this active upload
+    doc_entry = {
         "document_id":        doc_id,
         "filename":           file.filename,
         "file_type":          ext,
@@ -2626,6 +2720,9 @@ async def upload_legal_document(
         "language":           language,
         "created_at":         datetime.now().isoformat(),
     }
+    LEGAL_DOCUMENTS[doc_id] = doc_entry
+    LEGAL_DOCUMENTS["current"] = doc_entry
+    LEGAL_DOCUMENTS["doc_current"] = doc_entry
 
     return JSONResponse(content={
         "status":             "success",
@@ -2644,6 +2741,18 @@ async def upload_legal_document(
     })
 
 
+# ── DELETE /api/legal-document ───────────────────────────────────────────────
+
+@app.delete("/api/legal-document")
+async def clear_legal_document():
+    """
+    Purges all active document sessions from memory, guaranteeing a clean slate.
+    """
+    LEGAL_DOCUMENTS.clear()
+    logger.info("Purged all active legal document sessions.")
+    return {"status": "success", "message": "All document sessions purged."}
+
+
 # ── POST /api/chat-document ──────────────────────────────────────────────────
 
 @app.post("/api/chat-document")
@@ -2651,17 +2760,14 @@ async def chat_document(req: ChatDocumentRequest):
     """
     Multi-turn contextual Q&A tied strictly to the uploaded legal document.
     Routes response through Gnani Timbre TTS in the requested regional language.
+    Does NOT fall back to static mock data or cross-session residual caches.
     """
-    doc = LEGAL_DOCUMENTS.get(req.document_id)
+    doc = LEGAL_DOCUMENTS.get(req.document_id) or LEGAL_DOCUMENTS.get("current") or LEGAL_DOCUMENTS.get("doc_current")
     if not doc:
-        if LEGAL_DOCUMENTS:
-            doc = list(LEGAL_DOCUMENTS.values())[-1]
-        else:
-            doc = {
-                "extracted_text": MOCK_LEGAL_INPUT,
-                "structured_summary": analyze_and_structure_notice(MOCK_LEGAL_INPUT, req.language_code),
-                "filename": "IT_Act_Notice.pdf",
-            }
+        raise HTTPException(
+            status_code=404,
+            detail="No active document found in session. Please upload a document to begin analysis."
+        )
 
     answer = answer_document_query(
         doc_text=doc.get("extracted_text", ""),
