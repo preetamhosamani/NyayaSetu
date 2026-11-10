@@ -2,8 +2,12 @@
 Offline unit tests for NyaySetu v2.0 bug-fix build.
 No network calls — validates pure business logic.
 """
-import sys
-sys.path.insert(0, '.')
+import sys, os
+_backend_dir = os.path.dirname(os.path.abspath(__file__))
+if _backend_dir not in sys.path:
+    sys.path.insert(0, _backend_dir)
+if '.' not in sys.path:
+    sys.path.insert(0, '.')
 
 from main import (
     extract_entities, simplify_legal_text, merge_entities, generate_followup,
@@ -445,6 +449,16 @@ check("T27h: LEGAL_DOCUMENTS purged cleanly to isolate sessions", len(LEGAL_DOCU
 print()
 total = PASSED + FAILED
 print(f'  {PASSED}/{total} tests passed', '✓' if FAILED == 0 else f'  ({FAILED} FAILED)')
-if FAILED > 0:
-    sys.exit(1)
+
+import unittest
+
+class TestNyaySetuOffline(unittest.TestCase):
+    def test_all_127_suites(self):
+        """Validates that all 127 offline test assertions evaluated successfully."""
+        self.assertEqual(FAILED, 0, f"{FAILED} tests failed out of {PASSED + FAILED}")
+        self.assertEqual(PASSED, 127, f"Expected 127 passed tests, got {PASSED}")
+
+if __name__ == '__main__':
+    if FAILED > 0:
+        sys.exit(1)
 
