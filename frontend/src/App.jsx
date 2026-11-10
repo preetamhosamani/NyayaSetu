@@ -47,7 +47,7 @@ const SUPPORTED_LANGUAGES = [
   { code: 'as-IN', name: 'Assamese + English',  native: 'অসমীয়া + Eng',  sub: 'Assamese+Eng' },
 ];
 
-const BASE_SPEED = 1.0;
+const BASE_SPEED = 1.6;
 const SPEED_OPTIONS = [
   { val: 0.5,  label: '0.5x' },
   { val: 0.75, label: '0.75x' },
