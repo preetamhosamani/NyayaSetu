@@ -288,6 +288,53 @@ check("T22b: Deadline answer mentions 7 days", "7 days" in ans_deadline)
 ans_action = answer_document_query(extracted_doc_text, breakdown_kn, "ನಾನು ಏನು ಮಾಡಬೇಕು?", language="kn-IN")
 check("T22c: Kannada action answer provides numbered steps", "ಕ್ರಮಗಳು" in ans_action and "1." in ans_action)
 
+# ── T23: Incident Type Semantic Classification ───────────────────────────────
+from main import classify_incident_type, is_valid_person_name
+
+otp_spoken_kn = "ಅವನು ನನಗೆ ಓ ಟಿ ಪಿ ಕೇಳಿದ, ಓ ಟಿ ಪಿ ಹೇಳಿದೆ, ಆಮೇಲೆ ನಾನು ನೂರು ಬಿಸ್ಸು."
+check("T23a: Long spoken OTP Kannada sentence -> OTP Fraud / Phishing",
+      classify_incident_type(otp_spoken_kn) == "OTP Fraud / Phishing",
+      classify_incident_type(otp_spoken_kn))
+
+check("T23b: Hindi OTP sentence classified",
+      classify_incident_type("उसने मुझसे ओटीपी मांगा मैंने दे दिया") == "OTP Fraud / Phishing")
+
+check("T23c: English OTP classified",
+      classify_incident_type("He asked me for OTP and cleared my account") == "OTP Fraud / Phishing")
+
+check("T23d: Scam call classified correctly",
+      classify_incident_type("ಬ್ಯಾಂಕ್ ಮ್ಯಾನೇಜರ್ ಅಂತ ಕಾಲ್ ಮಾಡಿದ") == "Fraudulent Scam Call / Impersonation")
+
+check("T23e: Malicious link classified",
+      classify_incident_type("WhatsApp ನಲ್ಲಿ ಲಿಂಕ್ ಕಳಿಸಿದ್ರು ಅದನ್ನ ಕ್ಲಿಕ್ ಮಾಡ್ದೆ") == "Malicious Link / APK Scam")
+
+check("T23f: Job/task scam classified",
+      classify_incident_type("ಟೆಲಿಗ್ರಾಂನಲ್ಲಿ ಟಾಸ್ಕ್ ಕೆಲಸ ಅಂತ ಹೇಳಿ ಹಣ ಹಾಕಿಸಿಕೊಂಡ್ರು") == "Fake Investment / Job Task Scam")
+
+check("T23g: Loan app/blackmail classified",
+      classify_incident_type("ಲೋನ್ ಆಪ್‌ನಿಂದ ಬ್ಲ್ಯಾಕ್‌ಮೇಲ್ ಮಾಡ್ತಿದ್ದಾರೆ") == "Fake Loan App Fraud / Extortion")
+
+check("T23h: QR code scam classified",
+      classify_incident_type("ಕ್ಯೂಆರ್ ಕೋಡ್ ಸ್ಕ್ಯಾನ್ ಮಾಡು ಅಂತ ಹೇಳಿದ್ರು") == "QR Code / UPI Scam")
+
+check("T23i: Lottery scam classified",
+      classify_incident_type("ಲಕ್ಷ ರೂಪಾಯಿ ಲಾಟರಿ ಗೆದ್ದಿದ್ದೀರಿ ಅಂತ ಮೋಸ ಮಾಡಿದ್ರು") == "Lottery / Prize / Delivery Scam")
+
+# ── T24: Name Validation — bank names must NOT become complainant_name ─────────
+check("T24a: 'SBI' rejected as person name", not is_valid_person_name("SBI"))
+check("T24b: 'ಎಸ್ ಬಿ ಐ' rejected as person name", not is_valid_person_name("ಎಸ್ ಬಿ ಐ"))
+check("T24c: 'HDFC' rejected as person name", not is_valid_person_name("HDFC"))
+check("T24d: 'ಹೌದು' rejected as person name", not is_valid_person_name("ಹೌದು"))
+check("T24e: 'ಪ್ರೀತಮ್ ಹೊಸಮನಿ' accepted as person name", is_valid_person_name("ಪ್ರೀತಮ್ ಹೊಸಮನಿ"))
+check("T24f: 'Priya Patel' accepted as person name", is_valid_person_name("Priya Patel"))
+check("T24g: 'ರಮೇಶ್ ಕುಮಾರ್' accepted as person name", is_valid_person_name("ರಮೇಶ್ ಕುಮಾರ್"))
+
+# ── T25: extract_entities full transcript with long spoken OTP ────────────────
+otp_full_ents = extract_entities(otp_spoken_kn)
+check("T25a: Long Kannada OTP speech classified as OTP Fraud / Phishing (not raw sentence)",
+      otp_full_ents.get("incident_type") == "OTP Fraud / Phishing",
+      otp_full_ents.get("incident_type"))
+
 # ─── Summary ──────────────────────────────────────────────────────────────────
 print()
 total = PASSED + FAILED

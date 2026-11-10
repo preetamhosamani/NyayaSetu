@@ -1150,6 +1150,140 @@ def generate_complaint_narrative(entities: dict, language: str = "en", user_stat
         )
 
 
+# ─── INCIDENT TYPE TAXONOMY ───────────────────────────────────────────────────
+
+# Ordered list: (regex_pattern, label). First match wins.
+_INCIDENT_TAXONOMY = [
+    # 1. OTP / Credential Phishing
+    (
+        r'(?:[ಒಓ]\s*\.?\s*ಟಿ\s*\.?\s*ಪಿ|[ಒಓ]ಟಿಪಿ|[ಒಓ]ಟೀಪಿ|'
+        r'OTP|one\s*time\s*pass(?:word|code)?|passcode|'
+        r'ओटीपी|ओ\s*टी\s*पी|'
+        r'ஓடிபி|ஓ\s*டி\s*பி|'
+        r'ఓటీపీ|ఓ\s*టీ\s*పీ|'
+        r'ഒടിപി|ഒ\s*ടി\s*പി|'
+        r'ওটিপি|ও\s*টি\s*পি|'
+        r'ઓટીపી|ਓਟੀਪੀ|'
+        r'ಪಾಸ್‌?ವರ್ಡ್|ಪಾಸ್ವರ್ಡ್|ಎಂಪಿನ|ಎಂಪಿನ್|'
+        r'पासवर्ड|एमपिन|পাসওয়ার্ড|পিন|phishing)',
+        'OTP Fraud / Phishing'
+    ),
+    # 2. QR Code / UPI Collect Request Scam
+    (
+        r'(?:QR\s*code|QR|ಕ್ಯೂಆರ್\s*ಕೋಡ್|ಕ್ಯೂಆರ್|'
+        r'क्यूआर\s*कोड|क्यूआर|கியூஆர்|క్యూఆర్|ക്യുആർ|'
+        r'scan\s*(?:qr|code)|collect\s*request|olx|ಒಎಲ್‌ಎಕ್ಸ್|ओएलएक्स)',
+        'QR Code / UPI Scam'
+    ),
+    # 3. Malicious Link / APK / Remote-Access Tool
+    (
+        r'(?:apk|anydesk|teamviewer|quicksupport|screen\s*shar|remote\s*access|'
+        r'ಲಿಂಕ್|ಡೌನ್‌ಲೋಡ್|ಇನ್‌ಸ್ಟಾಲ್|ಎನಿಡೆಸ್ಕ್|ಸ್ಕ್ರೀನ್\s*ಶೇರ್|'
+        r'लिंक|डाउनलोड|इंस्टॉल|एनीडेस्क|स्क्रीन\s*शेयर|'
+        r'லிங்க்|டவுன்லோட்|'
+        r'లింక్|డౌన్‌లోడ్|'
+        r'ലിങ്ക്|ആപ്പ്|ডাউনলোড|ডাউনলোড|DownloadLink)',
+        'Malicious Link / APK Scam'
+    ),
+    # 4. Fraudulent Scam Call / Digital Arrest / Impersonation
+    (
+        r'(?:scam\s*call|fake\s*call|customer\s*care|bank\s*(?:manager|officer|official)|'
+        r'(?:cbi|police|customs|trai|fedex|dhl|electricity)\s*(?:call|officer|official)|'
+        r'digital\s*arrest|impersonat|'
+        r'ಸ್ಕ್ಯಾಮ್\s*ಕಾಲ್|ಕಸ್ಟಮರ್\s*ಕೇರ್|ಬ್ಯಾಂಕ್\s*ಅಧಿಕಾರಿ|ಪೊಲೀಸ್|ಸಿಬಿಐ|'
+        r'ವಿದ್ಯುತ್\s*ಬಿಲ್|ಸಿಮ್\s*ಬ್ಲಾಕ್|ಕೊರಿಯರ್|ಮ್ಯಾನೇಜರ್\s*ಅಂತ|ಡಿಜಿಟಲ್\s*ಅರೆಸ್ಟ್|'
+        r'फर्जी\s*कॉल|कस्टमर\s*केयर|बैंक\s*अधिकारी|पुलिस|सीबीआई|बिजली\s*बिल|सिम\s*ब्लॉक|'
+        r'போலி\s*அழைப்பு|ఫేక్\s*కాల్|ഫോൺ\s*കോൾ)',
+        'Fraudulent Scam Call / Impersonation'
+    ),
+    # 5. Fake Investment / Part-time Job / Task Scam
+    (
+        r'(?:investment|invest|stock|trading|crypto|bitcoin|share\s*market|'
+        r'part\s*time|work\s*from\s*home|youtube\s*lik|double\s*money|'
+        r'telegram\s*task|task\s*scam|'
+        r'ಹೂಡಿಕೆ|ಟಾಸ್ಕ್|ಲಾಭ|ಟೆಲಿಗ್ರಾಂ|ಯೂಟ್ಯೂಬ್\s*ಲೈಕ್|ಪಾರ್ಟ್\s*ಟೈಮ್|ಡಬಲ್\s*ಹಣ|ಟ್ರೇಡಿಂಗ್|ಶೇರ್\s*ಮಾರ್ಕೆಟ್|'
+        r'निवेश|टास्क|टेलीग्राम|पार्ट\s*टाइम|घर\s*बैठे|मुनाफा|ट्रेडिंग|शेयर\s*बाजार|'
+        r'முதலீடு|పెట్టుబడి|ఉద్యోగం|നിക്ഷേപം|ജോലി)',
+        'Fake Investment / Job Task Scam'
+    ),
+    # 6. Fake Loan App / Extortion / Sextortion
+    (
+        r'(?:loan\s*app|instant\s*loan|blackmail|extortion|sextortion|'
+        r'nude|morphed\s*photo|video\s*call\s*blackmail|'
+        r'ಲೋನ್\s*ಆಪ್|ಸಾಲ\s*ಆಪ್|ಬ್ಲ್ಯಾಕ್‌?ಮೇಲ್|ಸೆಕ್ಸ್‌?ಟಾರ್ಷನ್|ವಿಡಿಯೋ\s*ಕಾಲ್|'
+        r'लोन\s*ऐप|कर्ज\s*ऐप|ब्लैकमेल|सेक्सटॉर्शन|वीडियो\s*कॉल|'
+        r'கடன்\s*ஆப்|రుణ\s*యాప్|വായ്പ\s*ആപ്)',
+        'Fake Loan App Fraud / Extortion'
+    ),
+    # 7. Lottery / Prize / Gift / Delivery Scam
+    (
+        r'(?:lottery|prize|gift\s*card|reward|winner|won\s*a|courier\s*parcel|'
+        r'ಲಾಟರಿ|ಗಿಫ್ಟ್|ಬಹುಮಾನ|ಪಾರ್ಸೆಲ್|'
+        r'लॉटरी|इनाम|उपहार|पार्सल|পরিশ্রম|লটারি|لاٹری)',
+        'Lottery / Prize / Delivery Scam'
+    ),
+    # 8. Catch-all: Unauthorized Transaction / General Cyber Fraud
+    (
+        r'(?:unauthorized|deducted|debited|hacked|stolen|cheated|'
+        r'ಕಡಿತ|ಹಣ\s*ಕಡಿತ|ದುಡ್ಡು\s*ಹೋಯ್ತು|ಖಾತೆಯಿಂದ\s*ಹೋಯಿತು|ವಂಚನೆ|ಮೋಸ|ಕಳ್ಳತನ|ದೋಚಿ|ಬಿಸ್ಸು|'
+        r'पैसे\s*कट|खाता\s*खाली|धोखाधड़ी|ठगी|फ्रॉड|घोटाला|'
+        r'மோசடி|ஏமாற்று|మోసం|దగా|తీసుకున్నారు|തട്ടിപ്പ്|ചതി|'
+        r'ফসবণূক|প্রতারণা|জালিয়াতি|છেতরপিণ্ডি|ਧੋਖਾਧੜੀ|scam|fraud)',
+        'Unauthorized Cyber Transaction / Fraud'
+    ),
+]
+
+
+def classify_incident_type(transcript: str) -> Optional[str]:
+    """
+    Semantically classify the fraud type from a user transcript.
+    Uses ordered taxonomy — returns the first matching label.
+    Never returns the raw conversational text.
+    """
+    if not transcript:
+        return None
+    for pat, label in _INCIDENT_TAXONOMY:
+        if indic_search(pat, transcript):
+            return label
+    return None
+
+
+# ─── NAME VALIDATION HELPER ───────────────────────────────────────────────────
+
+_DISALLOWED_NAME_TOKENS = {
+    # Kannada
+    'ಅಂತ', 'ನಾನು', 'ಒಬ್ಬ', 'ಸ್ಕ್ಯಾಮ್', 'ಕಾಲ್', 'ಫ್ರಾಡ್', 'ರೂಪಾಯಿ', 'ಕಳ್ಕೊಂಡೆ',
+    'ಮತ್ತು', 'ಹೌದು', 'ಇಲ್ಲ', 'ಸರಿ', 'ಆಯಿತು', 'ನಮಸ್ಕಾರ', 'ಹಲೋ', 'ಬ್ಯಾಂಕ್',
+    'ಹಣ', 'ದುಡ್ಡು', 'ಓಟಿಪಿ', 'ಒಟಿಪಿ', 'ಓ ಟಿ ಪಿ', 'ಒ ಟಿ ಪಿ', 'ಎಸ್ ಬಿ ಐ',
+    # Hindi
+    'और', 'है', 'हूँ', 'रुपये', 'फ्रॉड', 'कॉल', 'हाँ', 'नहीं', 'बैंक', 'पैसा', 'रुपया',
+    # English
+    'scam', 'call', 'fraud', 'lost', 'rupees', 'yes', 'no', 'ok', 'okay',
+    'hello', 'hi', 'thanks', 'bank', 'sbi', 'hdfc', 'icici', 'upi', 'otp',
+}
+
+
+def is_valid_person_name(name_str: str) -> bool:
+    """
+    Return True if name_str looks like a real person's name (1-3 tokens, no bank/fraud keywords).
+    """
+    if not name_str or len(name_str.strip()) < 2:
+        return False
+    clean = name_str.strip()
+    if any(c.isdigit() for c in clean):
+        return False
+    if extract_bank_name(clean):       # bank name → not a person
+        return False
+    if extract_transaction_mode(clean): # payment app → not a person
+        return False
+    tokens = [t.lower().strip('.,!?।') for t in clean.split()]
+    if not tokens or len(tokens) > 4:
+        return False
+    if any(t in _DISALLOWED_NAME_TOKENS for t in tokens):
+        return False
+    return True
+
+
 # ─── ENTITY EXTRACTION (rule-based, runs on REAL transcript only) ─────────────
 
 def extract_entities(transcript: str) -> dict:
@@ -1342,59 +1476,10 @@ def extract_entities(transcript: str) -> dict:
     if mode:
         entities["transaction_mode"] = mode
 
-    # Fraud classification keywords across all languages
-    keywords = {
-        "OTP":        "OTP Fraud / Phishing",
-        "UPI":        "UPI Transaction Fraud",
-        "phishing":   "Phishing Attack",
-        "loan":       "Fake Loan App Fraud",
-        "job":        "Job / Employment Scam",
-        "investment": "Investment / Stock Fraud",
-        "crypto":     "Cryptocurrency Fraud",
-        "sextortion": "Sextortion / Blackmail",
-        "scam":       "Cyber Fraud / Scam",
-        "fraud":      "Cyber Fraud",
-        # Kannada
-        "ಒ ಟಿ ಪಿ":     "OTP Fraud / Phishing",
-        "ಒಟಿಪಿ":       "OTP Fraud / Phishing",
-        "ಸ್ಕ್ಯಾಮ್ ಕಾಲ್": "Fraudulent Scam Call",
-        "ಸ್ಕ್ಯಾಮ್":     "Online Scam / Fraud",
-        "ವಂಚನೆ":      "Cyber Fraud / Deception",
-        "ಮೋಸ":        "Cheating / Fraud",
-        "ಕಳ್ಳತನ":     "Theft / Digital Fraud",
-        # Hindi
-        "ओटीपी":      "OTP Fraud / Phishing",
-        "फर्जी कॉल":   "Fraudulent Scam Call",
-        "फर्जी":      "Fraudulent Call / Impersonation",
-        "ठगी":        "Cheating / Fraud",
-        "धोखाधड़ी":   "Financial Fraud / Cheating",
-        # Tamil
-        "ஓடிபி":       "OTP Fraud / Phishing",
-        "மோசடி":      "Cyber Fraud / Cheating",
-        "ஏமாற்று":    "Deception / Online Scam",
-        # Telugu
-        "ఓటీపీ":       "OTP Fraud / Phishing",
-        "మోసం":       "Online Fraud / Scam",
-        "దగా":        "Cheating / Financial Fraud",
-        # Malayalam
-        "ഒടിപി":       "OTP Fraud / Phishing",
-        "തട്ടിപ്പ്":   "Cyber Scam / Fraud",
-        "ചതി":        "Cheating / Fraud",
-        # Marathi
-        "फसवणूक":     "Cheating / Online Fraud",
-        # Bengali
-        "প্রতারণা":    "Fraud / Deception",
-        "জালিয়াতি":   "Forgery / Cyber Fraud",
-        # Gujarati
-        "છેતરપિંડી":   "Cheating / Fraud",
-        # Punjabi
-        "ਧੋਖਾਧੜੀ":    "Cyber Fraud / Cheating",
-    }
-    for kw, label in keywords.items():
-        if kw.lower() in transcript.lower():
-            entities["incident_type"] = label
-            entities["fraud_method"]  = f"Keyword detected: '{kw}'"
-            break
+    # ── Fraud / Incident Type Classification (semantic, not raw dump) ──────────
+    itype = classify_incident_type(transcript)
+    if itype:
+        entities["incident_type"] = itype
 
     return entities  # Only real extracted fields — no defaults
 
@@ -2596,7 +2681,13 @@ async def chat_intake(req: ChatRequest):
 
     if last_prompted and last_prompted not in session["entities"]:
         if last_prompted == "complainant_name" and len(clean_ans) >= 2 and not any(c.isdigit() for c in clean_ans):
-            session["entities"]["complainant_name"] = clean_ans
+            # Guard: bank names and fraud keywords must NOT become a person's name
+            detected_bank = extract_bank_name(clean_ans)
+            if detected_bank:
+                # User replied with their bank name when asked for their name — save it properly
+                session["entities"]["bank_name"] = detected_bank
+            elif is_valid_person_name(clean_ans):
+                session["entities"]["complainant_name"] = clean_ans
         elif last_prompted == "phone_number":
             sp_p = extract_phone_from_text(clean_ans)
             if sp_p:
@@ -2621,7 +2712,17 @@ async def chat_intake(req: ChatRequest):
             if clean_loc.lower() not in DISALLOWED_LOCATION_TOKENS and len(clean_loc) >= 2 and not any(c.isdigit() for c in clean_loc):
                 session["entities"]["address"] = clean_loc
         elif last_prompted == "incident_type" and len(clean_ans) >= 3:
-            session["entities"]["incident_type"] = clean_ans
+            # Classify semantically — never store raw conversational text
+            itype = classify_incident_type(clean_ans)
+            if itype:
+                session["entities"]["incident_type"] = itype
+            else:
+                # Fallback: if >4 words it's conversational; use generic label
+                word_count = len(clean_ans.split())
+                session["entities"]["incident_type"] = (
+                    "Cyber Financial Fraud / Unauthorized Transaction"
+                    if word_count > 4 else clean_ans
+                )
 
     # ── Extract entities from the user's message ────────────────────────────
     new_entities = extract_entities(req.message)
