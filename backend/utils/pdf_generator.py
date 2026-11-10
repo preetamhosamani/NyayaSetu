@@ -7,6 +7,12 @@ and a mandatory draft watermark.
 """
 
 import io
+import os
+import uuid
+import time
+import logging
+from pathlib import Path
+import tempfile
 from datetime import datetime
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -17,6 +23,53 @@ from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
 )
 from reportlab.pdfgen import canvas
+
+logger = logging.getLogger("nyaysetu.pdf")
+
+# ─── SECURE TEMPORARY DIRECTORY ──────────────────────────────────────────────
+# Prevent path traversal and unauthorized enumeration by using an isolated, dedicated directory
+try:
+    if os.name == 'nt':
+        _base_dir = Path(os.environ.get("TEMP", tempfile.gettempdir())) / "nyaysetu_secure"
+    else:
+        _base_dir = Path("/tmp/nyaysetu_secure")
+    _base_dir.mkdir(parents=True, exist_ok=True)
+    SECURE_TEMP_DIR = _base_dir
+except Exception:
+    SECURE_TEMP_DIR = Path(tempfile.gettempdir()) / "nyaysetu_secure"
+    SECURE_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def cleanup_file_safely(filepath: str | Path) -> bool:
+    """Deletes a temporary file safely, verifying it resides strictly inside SECURE_TEMP_DIR."""
+    try:
+        p = Path(filepath).resolve()
+        sec_res = SECURE_TEMP_DIR.resolve()
+        if sec_res == p.parent or sec_res in p.parents:
+            if p.exists():
+                p.unlink()
+                logger.info(f"Securely cleaned up temporary PDF: {p.name}")
+                return True
+    except Exception as e:
+        logger.warning(f"Error during secure file cleanup for {filepath}: {e}")
+    return False
+
+
+def prune_expired_pdfs(max_age_seconds: int = 600) -> int:
+    """Removes temporary PDFs older than max_age_seconds (default: 10 minutes)."""
+    pruned = 0
+    now = time.time()
+    try:
+        for f in SECURE_TEMP_DIR.glob("*.pdf"):
+            try:
+                if now - f.stat().st_mtime > max_age_seconds:
+                    f.unlink()
+                    pruned += 1
+            except Exception:
+                pass
+    except Exception as e:
+        logger.warning(f"Error pruning expired PDFs: {e}")
+    return pruned
 
 
 # ─── WATERMARK CANVAS ────────────────────────────────────────────────────────
@@ -143,22 +196,12 @@ def _kv_row(label: str, value: str, styles) -> list:
 
 # ─── MAIN PDF BUILDER ────────────────────────────────────────────────────────
 
-def generate_complaint_pdf(data: dict) -> bytes:
-    """
-    Generate a single-page government-style Cybercrime Complaint PDF.
-
-    Args:
-        data: Dict with keys like complainant_name, phone_number, incident_type,
-              amount_lost, description, etc.
-
-    Returns:
-        PDF file as bytes.
-    """
-    buf = io.BytesIO()
+def build_pdf_document(target_dest, data: dict):
+    """Internal helper to construct and build the ReportLab PDF document onto a file path or buffer."""
     styles = _build_styles()
 
     doc = SimpleDocTemplate(
-        buf,
+        target_dest,
         pagesize=A4,
         topMargin=18 * mm,
         bottomMargin=18 * mm,
@@ -263,4 +306,36 @@ def generate_complaint_pdf(data: dict) -> bytes:
 
     # Build with watermark
     doc.build(elements, canvasmaker=WatermarkCanvas)
-    return buf.getvalue()
+
+
+def generate_secure_pdf_file(data: dict) -> Path:
+    """
+    Renders the PDF directly into an isolated secure temporary directory (/tmp/nyaysetu_secure/)
+    using a cryptographically secure random UUID4 filename to prevent path traversal and file enumeration.
+    """
+    prune_expired_pdfs(max_age_seconds=600)
+    secure_filename = f"{uuid.uuid4()}.pdf"
+    secure_filepath = SECURE_TEMP_DIR / secure_filename
+    build_pdf_document(str(secure_filepath), data)
+    return secure_filepath
+
+
+def generate_complaint_pdf(data: dict) -> bytes:
+    """
+    Generate a single-page government-style Cybercrime Complaint PDF.
+    Renders into SECURE_TEMP_DIR with a random UUID, retrieves binary content,
+    and immediately deletes the file from disk to prevent persistence.
+
+    Args:
+        data: Dict with complainant and incident information.
+
+    Returns:
+        PDF file as bytes.
+    """
+    secure_path = generate_secure_pdf_file(data)
+    try:
+        with open(secure_path, "rb") as f:
+            pdf_bytes = f.read()
+    finally:
+        cleanup_file_safely(secure_path)
+    return pdf_bytes

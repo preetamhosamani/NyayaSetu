@@ -18,19 +18,27 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional, Any
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, JSONResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import httpx
+import uuid
+import re
 
 from utils.mock_fallbacks import (
     get_mock_stt_response,
     get_mock_entities,
     generate_mock_tts_audio,
 )
-from utils.pdf_generator import generate_complaint_pdf
+from utils.pdf_generator import (
+    generate_complaint_pdf,
+    generate_secure_pdf_file,
+    cleanup_file_safely,
+    prune_expired_pdfs,
+    SECURE_TEMP_DIR,
+)
 from utils.risk_scorer import calculate_fraud_risk
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
@@ -60,6 +68,77 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ─── SECURE EXCEPTION & ERROR HANDLERS ──────────────────────────────────────
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Secure error handler: Strips detailed stack traces and internal file paths
+    from production API error responses while securely logging full exceptions server-side.
+    """
+    logger.error(f"Unhandled exception on {request.method} {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "status": "error",
+            "error": "InternalServerError",
+            "message": "An unexpected error occurred while processing your request. Please try again later.",
+            "request_id": str(uuid.uuid4())[:8]
+        }
+    )
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Clean HTTP exception handler without leaking internal file system paths."""
+    clean_detail = str(exc.detail) if exc.detail else "Request error."
+    if any(s in clean_detail for s in ["Traceback", "File \"", "C:\\", "/tmp", ".py"]):
+        clean_detail = "An operational error occurred while fulfilling the request."
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "status": "error",
+            "error": "RequestError",
+            "message": clean_detail
+        }
+    )
+
+# ─── LLM INPUT SANITIZATION & PROMPT GUARDRAILS ─────────────────────────────
+
+PROMPT_INJECTION_PATTERNS = [
+    re.compile(r'(?i)\b(?:system|assistant|human|user)\s*:', re.IGNORECASE),
+    re.compile(r'(?i)\b(?:ignore|disregard|forget)\s+(?:all\s+)?(?:previous|prior|above)\s+(?:instructions?|prompts?|rules?|context)\b', re.IGNORECASE),
+    re.compile(r'(?i)\b(?:you\s+are\s+now|act\s+as|pretend\s+to\s+be)\b', re.IGNORECASE),
+    re.compile(r'(?i)\b(?:bypass|override|disable)\s+(?:safety|guardrails?|filters?|rules?)\b', re.IGNORECASE),
+    re.compile(r'<\/?(?:script|iframe|object|embed|style|meta)[^>]*>', re.IGNORECASE),
+    re.compile(r'\[\s*(?:system|override|admin|prompt)\s*\]', re.IGNORECASE),
+    re.compile(r'(?i)```\s*(?:system|prompt|admin)', re.IGNORECASE),
+]
+
+def sanitize_user_input(text: str) -> str:
+    """
+    Sanitizes raw transcriptions, document text, and citizen queries:
+    - Strips dangerous non-printable ASCII control characters.
+    - Neutralizes prompt injection phrases, jailbreak instructions, and role-override tags.
+    - Strips malicious script/HTML injection tags.
+    """
+    if not text or not isinstance(text, str):
+        return ""
+    
+    # 1. Strip non-printable control characters (allow \n, \r, \t, normal unicode)
+    cleaned = "".join(ch for ch in text if ch in ('\n', '\r', '\t') or (ord(ch) >= 32 and ord(ch) != 127))
+    
+    # 2. Strip prompt injection & jailbreak tags
+    for pattern in PROMPT_INJECTION_PATTERNS:
+        cleaned = pattern.sub(" ", cleaned)
+    
+    # 3. Strip HTML tags
+    cleaned = re.sub(r'<\/?\w+[^>]*>', '', cleaned)
+    
+    # 4. Normalize excessive newlines / backticks
+    cleaned = re.sub(r'(`{3,})', '```', cleaned)
+    
+    return cleaned.strip()
 
 # ─── LANGUAGE & AUDIO HELPERS ────────────────────────────────────────────────
 
@@ -1298,6 +1377,10 @@ def extract_entities(transcript: str) -> dict:
     Extract complaint entities from a real user transcript.
     Returns only fields that were actually found — no defaults injected.
     """
+    if not transcript:
+        return {}
+
+    transcript = sanitize_user_input(transcript)
     if not transcript:
         return {}
 
@@ -2577,7 +2660,8 @@ async def transcribe_audio(
 
         if response.status_code == 200:
             stt_data   = response.json()
-            transcript = stt_data.get("transcript", stt_data.get("text", ""))
+            raw_transcript = stt_data.get("transcript", stt_data.get("text", ""))
+            transcript = sanitize_user_input(raw_transcript)
             entities   = extract_entities(transcript)   # real data only
 
             return JSONResponse(content={
@@ -2613,9 +2697,10 @@ async def transcribe_audio(
 # ── POST /api/generate-pdf ───────────────────────────────────────────────────
 
 @app.post("/api/generate-pdf")
-async def generate_pdf(data: ComplaintData):
+async def generate_pdf(data: ComplaintData, background_tasks: BackgroundTasks):
     """Generate a government-ready Cybercrime Complaint PDF."""
     logger.info(f"PDF request: {data.complainant_name or '(anonymous)'}")
+    background_tasks.add_task(prune_expired_pdfs, 600)
 
     try:
         payload = data.model_dump()
@@ -2635,7 +2720,7 @@ async def generate_pdf(data: ComplaintData):
         )
 
     except Exception as exc:
-        logger.error(f"PDF generation failed: {exc}")
+        logger.error(f"PDF generation failed: {exc}", exc_info=True)
         try:
             safe_payload = {
                 "complainant_name": (payload.get("complainant_name") if "payload" in locals() else None) or "Citizen Complainant",
@@ -2656,7 +2741,8 @@ async def generate_pdf(data: ComplaintData):
                 headers={"Content-Disposition": 'attachment; filename="NyaySetu_Complaint_DRAFT.pdf"'},
             )
         except Exception as inner:
-            raise HTTPException(status_code=500, detail=f"PDF generation failed: {inner}")
+            logger.error(f"Fallback PDF generation error: {inner}", exc_info=True)
+            raise HTTPException(status_code=500, detail="PDF generation failed. Please verify submitted details.")
 
 
 # ── POST /api/assess-risk ────────────────────────────────────────────────────
@@ -2864,10 +2950,11 @@ async def chat_document(req: ChatDocumentRequest):
             detail="No active document found in session. Please upload a document to begin analysis."
         )
 
+    sanitized_query = sanitize_user_input(req.user_message)
     answer = answer_document_query(
         doc_text=doc.get("extracted_text", ""),
         structured_summary=doc.get("structured_summary", {}),
-        query=req.user_message,
+        query=sanitized_query,
         language=req.language_code,
     )
 
@@ -2903,7 +2990,7 @@ async def chat_intake(req: ChatRequest):
 
     # ── Contextual field capture for direct question responses ──────────────
     last_prompted = session.get("last_prompted")
-    clean_ans = req.message.strip()
+    clean_ans = sanitize_user_input(req.message.strip())
     session.setdefault("user_statements", []).append(clean_ans)
 
     if last_prompted and last_prompted not in session["entities"]:
