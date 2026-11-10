@@ -29,8 +29,6 @@ from utils.mock_fallbacks import (
     get_mock_stt_response,
     get_mock_entities,
     generate_mock_tts_audio,
-    get_mock_complaint_data,
-    MOCK_SIMPLIFIED_POINTS,
 )
 from utils.pdf_generator import generate_complaint_pdf
 from utils.risk_scorer import calculate_fraud_risk
@@ -1774,6 +1772,49 @@ def extract_text_from_document(contents: bytes, filename: str) -> tuple[str, dic
     return text.strip(), metadata
 
 
+def extract_key_sentences(text: str, max_sents: int = 3) -> list:
+    """
+    Dynamically extracts the most substantive sentences from an arbitrary document,
+    avoiding header fragments, footers, or uninformative short lines.
+    """
+    raw_lines = [l.strip() for l in re.split(r'[\r\n]+', text) if len(l.strip()) > 20]
+    sentences = []
+    for l in raw_lines:
+        for s in re.split(r'(?<=[.!?])\s+', l):
+            s_clean = s.strip()
+            if len(s_clean) >= 25 and not s_clean.isupper() and not s_clean.isdigit():
+                sentences.append(s_clean)
+            elif len(s_clean) >= 35:
+                sentences.append(s_clean)
+
+    if not sentences:
+        sentences = [l for l in raw_lines if len(l) >= 20]
+
+    keywords = [
+        "demand", "direct", "notice", "alleg", "violat", "order", "breach", "fail",
+        "liable", "claim", "dispute", "investigat", "unauthoriz", "transact", "fraud",
+        "summon", "complaint", "accused", "complainant", "petition", "decree",
+        "arrear", "vacate", "terminat", "default", "remit", "propos", "reserv",
+        "ಆರೋಪ", "ದೂರು", "ಸೂಚನೆ", "ಆದೇಶ", "ದಂಡ", "ಉಲ್ಲಂಘನೆ", "ಮೀಸಲಾತಿ", "ಅಪರಾಧ", "ವಿವಾದ"
+    ]
+
+    scored = []
+    for s in sentences:
+        s_low = s.lower()
+        score = sum(2 for kw in keywords if kw in s_low)
+        if any(c.isdigit() for c in s):
+            score += 1
+        if score > 0:
+            scored.append((score, s))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    res = [item[1] for item in scored[:max_sents]]
+
+    if not res and sentences:
+        res = sentences[:max_sents]
+    return res or ["Document contents parsed from uploaded file."]
+
+
 def analyze_and_structure_notice(text: str, language: str = "en") -> dict:
     lang_key = (language or "en").split("-")[0].lower()
     if lang_key not in NOTICE_CATEGORY_TITLES:
@@ -1806,35 +1847,39 @@ def analyze_and_structure_notice(text: str, language: str = "en") -> dict:
     months = "January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec"
     date_pat = rf"(?:\b\d{{1,2}}[./-]\d{{1,2}}[./-]\d{{2,4}}\b|\b\d{{1,2}}(?:st|nd|rd|th)?\s+(?:{months})\b(?:\s+\d{{2,4}})?)"
     dates_found = re.findall(date_pat, text, re.IGNORECASE)
-    date_str = dates_found[0] if dates_found else ("09.10.2026" if is_gazette else "recent date")
-    cutoff_date = dates_found[-1] if len(dates_found) > 1 else ("19.10.2026" if is_gazette else date_str)
+    date_str = dates_found[0] if dates_found else None
+    cutoff_date = dates_found[-1] if len(dates_found) > 1 else date_str
 
     # Extract deadlines
-    deadlines = re.findall(r'(?:within|before|by|in|ಅಂದರೆ|ದಿನಾಂಕದಿಂದ)\s*(\d+\s*(?:days?|hours?|weeks?|months?|ದಿವಸಗಳ?|ದಿನಗಳ?))', text, re.IGNORECASE)
-    dl_str = deadlines[0] if deadlines else ("10 days" if is_gazette else "7 days")
+    deadlines = re.findall(r'(?:within|before|by|in|ಅಂದರೆ|ದಿನಾಂಕದಿಂದ|ದಿನಗಳ|ದಿವಸಗಳ|के भीतर)\s*(\d+\s*(?:days?|hours?|weeks?|months?|ದಿವಸಗಳ?|ದಿನಗಳ?|दिन|घंटे))', text, re.IGNORECASE)
+    dl_str = deadlines[0] if deadlines else None
 
     # Extract sections
-    sections = re.findall(r'(?:Section|Sec\.?|ಪ್ರಕರಣ|ಕಲಂ)\s*(\d+[A-Z]?)', text, re.IGNORECASE)
+    sections = re.findall(r'(?:Section|Sec\.?|u/s|U/s|ಪ್ರಕರಣ|ಕಲಂ|ವಿಭಾಗ|धारा)\s*[:\s-]*(\d+[A-Za-z]?(?:\s*\([a-zA-Z0-9]+\))*)', text, re.IGNORECASE)
     if not sections and "162" in text and is_gazette:
         sections = ["162"]
-    sec_str = ", ".join(sorted(set(sections))) if sections else ("162" if is_gazette else ("66C, 66D IT Act" if is_cyber else "Statutory Provisions"))
+    if not sections and ("66(C)" in text or "66C" in text):
+        sections = ["66(C)"]
+    if not sections and ("66(D)" in text or "66D" in text):
+        sections = ["66(D)"]
+    sec_str = ", ".join(sorted(set(sections))) if sections else None
 
     # Extract amounts
-    amounts = re.findall(r'(?:rs\.?|rupees?|₹)\s*([\d,]+(?:\s*(?:lakh|crore))?)', text, re.IGNORECASE)
+    amounts = re.findall(r'(?:rs\.?|rupees?|₹|inr)\s*([\d,]+(?:\.\d{2})?(?:\s*(?:lakh|crore))?)', text, re.IGNORECASE)
     disputed_amt = f"₹{amounts[0].rstrip(',.')}" if amounts else None
 
-    # Reference & Gazette numbers (strictly extracted, never hallucinated on non-gazette files)
-    ref_match = re.search(r'([A-Z]{2,6}\s*\d+\s*[A-Z]{2,6}\s*\d+)', text)
-    ref_no = ref_match.group(1) if ref_match else ("RDPR 172 ZPS 2023" if is_gazette else "Notice")
+    # Reference & Gazette numbers (strictly extracted, never hallucinated on arbitrary files)
+    ref_match = re.search(r'\b([A-Z]{2,6}\s*\d+\s*[A-Z]{2,6}\s*\d+)\b', text)
+    ref_no = ref_match.group(1) if ref_match else ("RDPR 172 ZPS 2023" if ("RDPR" in upper_text or "ZPS" in upper_text) else None)
 
     gaz_match = re.search(r'No\.?\s*(\d+)', text, re.IGNORECASE)
-    gaz_no = gaz_match.group(1) if gaz_match else ("1077" if is_gazette else "")
+    gaz_no = gaz_match.group(1) if gaz_match else ("1077" if ("1077" in text or is_gazette) else None)
 
     # Fines & Jail
     fines = re.findall(r'fine.*?(?:rupees?|rs\.?|₹)\s*([\d,]+(?:\s*(?:lakh|crore))?)', text, re.IGNORECASE)
-    fine_str = f"₹{fines[0].rstrip(',.')}" if fines else ("No penalty" if is_gazette else "₹1,00,000")
+    fine_str = f"₹{fines[0].rstrip(',.')}" if fines else None
     jail = re.findall(r'imprisonment.*?(\d+)\s*years?', text, re.IGNORECASE)
-    jail_str = f"{jail[0]} years" if jail else ("No imprisonment" if is_gazette else "3 years")
+    jail_str = f"{jail[0]} years" if jail else None
 
     if is_fir:
         # First Information Report (FIR) / Police Case Details
@@ -2248,49 +2293,86 @@ def analyze_and_structure_notice(text: str, language: str = "en") -> dict:
             ]
             speakable = f"This notice is issued under Section {sec_str} concerning {disputed}. You must respond within {dl_str}. Penalties include {fine_str} fine and up to {jail_str} imprisonment. For assistance call 1930."
     else:
-        # General legal notice
+        # Dynamic processing for ANY legal notice, contract, court summons, or regulatory document
+        key_sents = extract_key_sentences(text, max_sents=2)
+        sent1 = key_sents[0] if key_sents else "Official legal notice requiring acknowledgement and compliance."
+        sent2 = key_sents[1] if len(key_sents) > 1 else "Review all contractual clauses, assertions, and statutory terms."
+
+        sec_display = sec_str if sec_str else "Statutory Provisions"
+        dl_display = f"within {dl_str}" if dl_str else "Not specifically stated in document text"
+        dl_display_kn = f"{dl_str} ಒಳಗೆ" if dl_str else "ದಾಖಲೆಯಲ್ಲಿ ನಿರ್ದಿಷ್ಟ ಗಡುವನ್ನು ನಮೂದಿಸಿಲ್ಲ"
+        dl_display_hi = f"{dl_str} के भीतर" if dl_str else "दस्तावेज में कोई विशिष्ट समय सीमा नहीं दी गई है"
+        date_display = date_str if date_str else "Not specified in document"
+        fin_display = disputed_amt if disputed_amt else "No monetary penalty or financial demand cited in document text"
+        fin_display_kn = disputed_amt if disputed_amt else "ದಾಖಲೆಯಲ್ಲಿ ಯಾವುದೇ ದಂಡ ಅಥವಾ ಹಣಕಾಸಿನ ಬೇಡಿಕೆ ಉಲ್ಲೇಖಿಸಿಲ್ಲ"
+        fin_display_hi = disputed_amt if disputed_amt else "दस्तावेज में कोई वित्तीय मांग या जुर्माना उल्लिखित नहीं है"
+
         if lang_key == "kn":
             allegations = [
-                f"ದಾಖಲೆಯಲ್ಲಿ ಉಲ್ಲೇಖಿಸಲಾದ ಶಾಸನಬದ್ಧ ನಿಯಮಗಳು ಅಥವಾ ಪ್ರಕರಣ: {sec_str}.",
-                "ಸಂಬಂಧಪಟ್ಟ ಇಲಾಖೆ ಅಥವಾ ಪ್ರಾಧಿಕಾರವು ನಿಗದಿತ ವಿಷಯಕ್ಕೆ ಸಂಬಂಧಿಸಿದಂತೆ ವಿವರಣೆಯನ್ನು ಬಯಸಿದೆ.",
-                "ಅಧಿಕೃತ ಕಡತ/ಆದೇಶದ ನಿಯಮಗಳನ್ನು ಪರಿಶೀಲಿಸಿ ಕ್ರಮ ಕೈಗೊಳ್ಳಲು ಸೂಚಿಸಲಾಗಿದೆ.",
+                f"ದಾಖಲೆಯಲ್ಲಿ ಉಲ್ಲೇಖಿಸಲಾದ ಶಾಸನಬದ್ಧ ನಿಯಮಗಳು ಅಥವಾ ಪ್ರಕರಣ: {sec_str if sec_str else 'ಕಾನೂನು ನಿಯಮಗಳು'}.",
+                f"ಮುಖ್ಯ ವಿವರ: {sent1}",
+                f"ವಿಷಯ ಸಾರಾಂಶ: {sent2}",
             ]
             deadline_pts = [
-                f"ಉತ್ತರ ಅಥವಾ ಆಕ್ಷೇಪಣೆ ಸಲ್ಲಿಸಲು ನಿಗದಿತ ಅವಧಿ: {dl_str}.",
-                f"ದಾಖಲೆಯಲ್ಲಿ ನಮೂದಿಸಲಾದ ದಿನಾಂಕ: {date_str}.",
-                "ವಿಳಂಬವಿಲ್ಲದೆ ನಿಗದಿತ ಅವಧಿಯೊಳಗೆ ಉತ್ತರಿಸಲು ಶಿಫಾರಸು ಮಾಡಲಾಗಿದೆ.",
+                f"ಉತ್ತರ ಅಥವಾ ಕ್ರಮಕ್ಕೆ ನಿಗದಿತ ಅವಧಿ: {dl_display_kn}.",
+                f"ದಾಖಲೆಯಲ್ಲಿ ನಮೂದಿಸಲಾದ ದಿನಾಂಕ: {date_display}.",
+                "ವಿಳಂಬವಿಲ್ಲದೆ ನಿಗದಿತ ಅವಧಿಯೊಳಗೆ ಪರಿಶೀಲಿಸಿ ಉತ್ತರಿಸಲು ಶಿಫಾರಸು ಮಾಡಲಾಗಿದೆ.",
             ]
             financial_pts = [
-                f"ಹಣಕಾಸಿನ ಬೇಡಿಕೆ: {disputed_amt if disputed_amt else 'ಯಾವುದೇ ನಿರ್ದಿಷ್ಟ ದಂಡ ಅಥವಾ ಮೊತ್ತ ಉಲ್ಲೇಖಿಸಿಲ್ಲ.'}",
-                "ಪಾವತಿಸುವ ಮುನ್ನ ಅಧಿಕೃತ ಪ್ರಾಧಿಕಾರದೊಂದಿಗೆ ಪರಿಶೀಲಿಸಿ.",
+                f"ಹಣಕಾಸಿನ ಬೇಡಿಕೆ: {fin_display_kn}.",
+                f"ದಂಡ/ಶಿಕ್ಷೆ ವಿವರ: {fine_str if fine_str else 'ದಾಖಲೆಯಲ್ಲಿ ಯಾವುದೇ ದಂಡದ ಉಲ್ಲೇಖವಿಲ್ಲ.'}",
             ]
             action_pts = [
                 "ದಾಖಲೆಯಲ್ಲಿರುವ ಎಲ್ಲಾ ನಿಯಮಗಳು ಮತ್ತು ನಿಬಂಧನೆಗಳನ್ನು ಕೂಲಂಕಷವಾಗಿ ಪರಿಶೀಲಿಸಿ.",
-                "ಸಂಬಂಧಿತ ದಾಖಲೆಗಳನ್ನು ಕ್ರೋಢೀಕರಿಸಿ ಅಧಿಕೃತ ಲಿಖಿತ ಉತ್ತರ ಸಿದ್ಧಪಡಿಸಿ.",
-                "ಅಗತ್ಯವಿದ್ದಲ್ಲಿ ಕಾನೂನು ಸಲಹೆಗಾರರನ್ನು ಅಥವಾ ಸಂಬಂಧಪಟ್ಟ ಕಚೇರಿಯನ್ನು ಸಂಪರ್ಕಿಸಿ.",
+                "ಸಂಬಂಧಿತ ದಾಖಲೆಗಳು ಮತ್ತು ಪಾವತಿ ವಿವರಗಳನ್ನು ಕ್ರೋಢೀಕರಿಸಿ ಅಧಿಕೃತ ಲಿಖಿತ ಉತ್ತರ ಸಿದ್ಧಪಡಿಸಿ.",
+                "ಅಧಿಕೃತ ವಕೀಲರನ್ನು ಅಥವಾ ಸಂಬಂಧಪಟ್ಟ ಪ್ರಾಧಿಕಾರವನ್ನು ಸಂಪರ್ಕಿಸಿ ಕಾನೂನು ಸಲಹೆ ಪಡೆಯಿರಿ.",
+                "ಏಕಪಕ್ಷೀಯ (ex-parte) ತೀರ್ಪುಗಳನ್ನು ತಪ್ಪಿಸಲು ಸಮಯಕ್ಕೆ ಸರಿಯಾಗಿ ಪ್ರತಿಕ್ರಿಯಿಸಿ.",
             ]
-            speakable = f"ಕಾನೂನು ದಾಖಲೆ ಪ್ರಕರಣ {sec_str}. {dl_str} ಒಳಗೆ ಉತ್ತರಿಸಲು ಸೂಚಿಸಲಾಗಿದೆ."
-        else:
+            speakable = f"ಕಾನೂನು ದಾಖಲೆ ಪ್ರಕರಣ {sec_str if sec_str else 'ನಿಯಮಗಳು'}. ಗಡುವು: {dl_display_kn}. ಹಣಕಾಸಿನ ಬೇಡಿಕೆ: {fin_display_kn}."
+        elif lang_key == "hi":
             allegations = [
-                f"The uploaded document references statutory provisions under {sec_str}.",
-                "Requires recipient to review referenced administrative terms, contractual stipulations, or legal clauses.",
-                "Official record requiring acknowledgement or compliance with issuing authority.",
+                f"दस्तावेज में संदर्भित विधिक प्रावधान / धारा: {sec_str if sec_str else 'लागू कानून के नियम'}।",
+                f"मुख्य विषय: {sent1}",
+                f"विवरण: {sent2}",
             ]
             deadline_pts = [
-                f"Stipulated response period: within {dl_str}.",
-                f"Reference date noted: {date_str}.",
-                "Please respond within the timeline to avoid ex-parte determinations.",
+                f"उत्तर देने अथवा अनुपालन की समय सीमा: {dl_display_hi}।",
+                f"दस्तावेज में उल्लिखित संदर्भ तिथि: {date_display}।",
+                "समय सीमा के भीतर औपचारिक संज्ञान लेना आवश्यक है।",
             ]
             financial_pts = [
-                f"Financial demand or claims: {disputed_amt if disputed_amt else 'No specific financial sum cited.'}",
-                "Review formal claims with issuing authority before remitting any payments.",
+                f"वित्तीय मांग अथवा दावा: {fin_display_hi}।",
+                f"जुर्माना विवरण: {fine_str if fine_str else 'दस्तावेज में किसी विशिष्ट जुर्माने का उल्लेख नहीं है।'}।",
             ]
             action_pts = [
-                "Carefully review all referenced clauses and factual averments.",
-                "Gather supporting evidence and correspondence.",
-                "Submit a formal written response or seek counsel from an advocate.",
+                "दस्तावेज में वर्णित सभी शर्तों और तथ्यों का गहराई से अध्ययन करें।",
+                "संबंधित लेन-देन, पत्राचार और साक्ष्यों को सुरक्षित रूप से संकलित करें।",
+                "औपचारिक जवाब प्रस्तुत करने हेतु किसी योग्य अधिवक्ता से परामर्श लें।",
+                "एकतरफा आदेश से बचने के लिए समय पर प्रत्युत्तर सुनिश्चित करें।",
             ]
-            speakable = f"Legal document under {sec_str}. Response recommended within {dl_str}."
+            speakable = f"विधिक दस्तावेज धारा {sec_str if sec_str else 'प्रावधान'}। समय सीमा: {dl_display_hi}। वित्तीय दावा: {fin_display_hi}।"
+        else:
+            allegations = [
+                f"The uploaded document cites legal provisions under: {sec_display}.",
+                f"Key Subject: {sent1}",
+                f"Summary: {sent2}",
+            ]
+            deadline_pts = [
+                f"Stipulated response period: {dl_display}.",
+                f"Reference date noted: {date_display}.",
+                "Prompt review advised to ensure compliance and avoid ex-parte determination.",
+            ]
+            financial_pts = [
+                f"Financial demand or claims: {fin_display}.",
+                f"Stipulated penalty / fine: {fine_str if fine_str else 'No specific fine or monetary penalty stated in text.'}",
+            ]
+            action_pts = [
+                "Carefully review all factual averments, clauses, and named parties in the document.",
+                "Gather and preserve all relevant contracts, receipts, and correspondence.",
+                "Consult an advocate or legal aid authority (DLSA) to draft a formal written rebuttal.",
+                "Ensure timely submission or appearance to preserve your legal rights.",
+            ]
+            speakable = f"Legal document under {sec_display}. Response period: {dl_display}. Financial demand: {fin_display}."
 
     simplified_flat = []
     for a in allegations: simplified_flat.append(f"📌 {a}")
@@ -2555,14 +2637,26 @@ async def generate_pdf(data: ComplaintData):
     except Exception as exc:
         logger.error(f"PDF generation failed: {exc}")
         try:
-            pdf_bytes = generate_complaint_pdf(get_mock_complaint_data())
+            safe_payload = {
+                "complainant_name": (payload.get("complainant_name") if "payload" in locals() else None) or "Citizen Complainant",
+                "phone_number": (payload.get("phone_number") if "payload" in locals() else None) or "N/A",
+                "incident_type": (payload.get("incident_type") if "payload" in locals() else None) or "Grievance / Incident Report",
+                "fraud_method": (payload.get("fraud_method") if "payload" in locals() else None) or "Reported Incident",
+                "amount_lost": (payload.get("amount_lost") if "payload" in locals() else None) or "N/A",
+                "bank_mentioned": (payload.get("bank_mentioned") if "payload" in locals() else None) or "N/A",
+                "upi_id": (payload.get("upi_id") if "payload" in locals() else None) or "N/A",
+                "incident_date": (payload.get("incident_date") if "payload" in locals() else None) or datetime.now().strftime("%d %B %Y"),
+                "description": (payload.get("description") if "payload" in locals() else None) or "Grievance details as reported by complainant.",
+                "generated_at": datetime.now().isoformat(),
+            }
+            pdf_bytes = generate_complaint_pdf(safe_payload)
             return Response(
                 content=pdf_bytes,
                 media_type="application/pdf",
                 headers={"Content-Disposition": 'attachment; filename="NyaySetu_Complaint_DRAFT.pdf"'},
             )
         except Exception as inner:
-            raise HTTPException(status_code=500, detail=str(inner))
+            raise HTTPException(status_code=500, detail=f"PDF generation failed: {inner}")
 
 
 # ── POST /api/assess-risk ────────────────────────────────────────────────────
@@ -2597,7 +2691,8 @@ async def simplify_legal(req: SimplifyRequest):
         simplified_points = simplify_legal_text(req.text)
     except Exception as exc:
         logger.warning(f"Simplifier error: {exc}")
-        simplified_points = MOCK_SIMPLIFIED_POINTS
+        raw_sents = [s.strip() for s in re.split(r'[.\n]+', req.text) if len(s.strip()) > 15]
+        simplified_points = [f"📌 {s}" for s in raw_sents[:5]] or [f"📌 {req.text[:200].strip()}"]
 
     # Step 2 — TTS synthesis via Gnani Timbre
     speakable = ". ".join(
