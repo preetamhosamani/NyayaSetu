@@ -145,11 +145,15 @@ check("T12e: Greets Pritam Hosmani cleanly", "ಪ್ರೀತಮ್ ಹೊಸಮ
 check("T12f: Acknowledges 50,000", "50,000" in followup_kn or "50000" in followup_kn, followup_kn[:80])
 check("T12g: Asks for remaining missing info conversationally", "ಮೊಬೈಲ್" in followup_kn, followup_kn)
 
-# ── T13: User's exact live screenshot 2 — Code-mixed speech scenario ──────────
+# ── T13: User's exact live screenshot 2 & 3 — Code-mixed speech scenario ──────────
 code_mixed_kn = "ನನ್ನ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ಸಿಕ್ಸ್ ತ್ರೀ ಸಿಕ್ಸ್ ಟು ಸೆವೆನ್ ಡಬಲ್ ಸಿಕ್ಸ್ ಒನ್ ಏಟ್ ಸೆವೆನ್ ಮತ್ತು ಐ ಹ್ಯಾವ್ ಲಾಸ್ಟ್ ಫಿಫ್ಟಿ ಥೌಸಂಡ್ ರುಪೀಸ್"
 cm_ents = extract_entities(code_mixed_kn)
 check("T13a: Kannada code-mixed phone extracted", cm_ents.get("phone_number") == "6362766187", cm_ents.get("phone_number"))
 check("T13b: Kannada code-mixed amount extracted", cm_ents.get("amount_lost") == "₹50,000", cm_ents.get("amount_lost"))
+
+# Live screenshot 3 exact transcription with 'ಥ್ರೀ' and 'ಏಯ್ಟ್'
+live_shot3_ents = extract_entities("ಸಿಕ್ಸ್ ಥ್ರೀ ಸಿಕ್ಸ್ ಟು ಸೆವೆನ್ ಡಬಲ್ ಸಿಕ್ಸ್ ಒನ್ ಏಯ್ಟ್ ಸೆವೆನ್.")
+check("T13b2: Exact live Gnani STT transliterated phone (ಥ್ರೀ, ಏಯ್ಟ್, ಡಬಲ್)", live_shot3_ents.get("phone_number") == "6362766187", live_shot3_ents.get("phone_number"))
 
 # Hinglish code-mixed
 hinglish_txt = "मेरा फोन नंबर है नाइन एट सेवन सिक्स फाइव फोर थ्री टू वन ज़ीरो और मैंने फिफ्टी थाउजेंड रुपये खो दिए"

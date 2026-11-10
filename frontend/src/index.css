@@ -4,18 +4,19 @@
 
 @layer base {
   html, body {
-    background-color: #030712;
-    color: #f8fafc;
+    background-color: #FDFBF7;
+    color: #1D3557;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
   ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 999px; }
-  ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  ::-webkit-scrollbar-track { background: #F0EDE6; }
+  ::-webkit-scrollbar-thumb { background: #A8BFCF; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #7B9FB5; }
 
-  ::selection { background-color: rgba(99,102,241,0.3); }
+  ::selection { background-color: rgba(29,53,87,0.15); }
 }
 
 /* Waveform bar animation */
@@ -36,10 +37,40 @@
 
 /* Pulsing record ring */
 @keyframes recordRing {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
-  50%       { box-shadow: 0 0 0 12px rgba(244, 63, 94, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+  50%       { box-shadow: 0 0 0 12px rgba(220, 53, 69, 0); }
 }
 
 .animate-record-ring {
   animation: recordRing 1.4s ease-in-out infinite;
+}
+
+/* Gentle float animation for landing cards */
+@keyframes floatUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-float-up {
+  animation: floatUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Draft watermark */
+.draft-watermark {
+  position: relative;
+  overflow: hidden;
+}
+.draft-watermark::before {
+  content: 'DRAFT';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-35deg);
+  font-size: 5rem;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  color: rgba(29, 53, 87, 0.05);
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
 }

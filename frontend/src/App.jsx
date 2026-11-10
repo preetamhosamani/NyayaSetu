@@ -1,11 +1,19 @@
 /**
- * frontend/src/App.jsx  —  NyaySetu v3.0 (Conversational Intake + Stitch UI)
+ * frontend/src/App.jsx  —  NyaySetu v4.1 (Warm Cream & Deep Navy Sovereign Legal Bridge)
  *
- * Design: Google Stitch — dark obsidian (#030712), glassmorphic cards,
- *         indigo/emerald accents, animated waveform, skeleton loaders,
- *         toast notifications, split-pane conversational chat + live form.
- *
- * Data: All state starts EMPTY. Only real user actions populate the UI.
+ * Gnani.ai Multilingual Code-Mixed Integration:
+ *   Supports all 11 Indian languages with English integration:
+ *   - Kannada + English   (kn-IN · Code-Mixed)
+ *   - Hindi + English     (hi-IN · Hinglish)
+ *   - Indian English      (en-IN)
+ *   - Tamil + English     (ta-IN · Tanglish)
+ *   - Telugu + English    (te-IN · Code-Mixed)
+ *   - Marathi + English   (mr-IN · Code-Mixed)
+ *   - Bengali + English   (bn-IN · Code-Mixed)
+ *   - Gujarati + English  (gu-IN · Code-Mixed)
+ *   - Malayalam + English (ml-IN · Code-Mixed)
+ *   - Punjabi + English   (pa-IN · Code-Mixed)
+ *   - Assamese + English  (as-IN · Code-Mixed)
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -15,36 +23,600 @@ import {
   Phone, IndianRupee, User, MapPin, Building2, Calendar, CreditCard,
   Hash, Search, Globe, Activity, FileText, Shield, Sparkles,
   X, Upload, Send, MessageSquare, RefreshCw, Eye, ChevronDown, ChevronUp,
-  FileCheck, HelpCircle, UploadCloud, Square,
+  FileCheck, HelpCircle, UploadCloud, Square, Pencil, ChevronRight,
+  ArrowLeft, Lock, AlertTriangle, Share2, Printer, Check
 } from 'lucide-react';
 
 const API_BASE = '/api';
 
-const LANGUAGES = [
-  { code: 'kn-IN', label: 'ಕನ್ನಡ',  sub: 'Kannada+Eng', full: 'Kannada (kn-IN) · Code-Mixed' },
-  { code: 'hi-IN', label: 'हिन्दी',  sub: 'Hinglish',    full: 'Hindi (hi-IN) · Hinglish' },
-  { code: 'en-IN', label: 'English', sub: 'Indian Eng',  full: 'English (en-IN)' },
-  { code: 'ta-IN', label: 'தமிழ்',  sub: 'Tanglish',    full: 'Tamil (ta-IN) · Tanglish' },
-  { code: 'te-IN', label: 'తెలుగు', sub: 'Telugu+Eng',  full: 'Telugu (te-IN) · Code-Mixed' },
-  { code: 'ml-IN', label: 'മലയാളം', sub: 'Malayalam+Eng', full: 'Malayalam (ml-IN) · Code-Mixed' },
-  { code: 'mr-IN', label: 'मराठी',  sub: 'Marathi+Eng', full: 'Marathi (mr-IN) · Code-Mixed' },
-  { code: 'bn-IN', label: 'বাংলা',  sub: 'Bengali+Eng', full: 'Bengali (bn-IN) · Code-Mixed' },
-  { code: 'gu-IN', label: 'ગુજરાતી', sub: 'Gujarati+Eng', full: 'Gujarati (gu-IN) · Code-Mixed' },
-  { code: 'pa-IN', label: 'ਪੰਜਾਬੀ', sub: 'Punjabi+Eng', full: 'Punjabi (pa-IN) · Code-Mixed' },
+// ═══════════════════════════════════════════════════════════════════════════════
+// ALL SUPPORTED GNANI API LANGUAGES (WITH ENGLISH INTEGRATION / CODE-MIXED)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const SUPPORTED_LANGUAGES = [
+  { code: 'kn-IN', name: 'Kannada + English',   native: 'ಕನ್ನಡ + Eng',  sub: 'Kannada+Eng' },
+  { code: 'hi-IN', name: 'Hindi + English',     native: 'हिन्दी + Eng',   sub: 'Hinglish' },
+  { code: 'en-IN', name: 'English',             native: 'English',        sub: 'Indian Eng' },
+  { code: 'ta-IN', name: 'Tamil + English',     native: 'தமிழ் + Eng',    sub: 'Tanglish' },
+  { code: 'te-IN', name: 'Telugu + English',    native: 'తెలుగు + Eng',   sub: 'Telugu+Eng' },
+  { code: 'mr-IN', name: 'Marathi + English',   native: 'मराठी + Eng',    sub: 'Marathi+Eng' },
+  { code: 'bn-IN', name: 'Bengali + English',   native: 'বাংলা + Eng',    sub: 'Bengali+Eng' },
+  { code: 'gu-IN', name: 'Gujarati + English',  native: 'ગુજરાતી + Eng',  sub: 'Gujarati+Eng' },
+  { code: 'ml-IN', name: 'Malayalam + English', native: 'മലയാളം + Eng',  sub: 'Malayalam+Eng' },
+  { code: 'pa-IN', name: 'Punjabi + English',   native: 'ਪੰਜਾਬੀ + Eng',   sub: 'Punjabi+Eng' },
+  { code: 'as-IN', name: 'Assamese + English',  native: 'অসমীয়া + Eng',  sub: 'Assamese+Eng' },
 ];
 
-// Baseline speed calibration: 1.0x in UI corresponds to standard 1.6x raw audio speed
 const BASE_SPEED = 1.6;
 const SPEED_OPTIONS = [
   { val: 0.5,  label: '0.5x' },
   { val: 0.75, label: '0.75x' },
-  { val: 1.0,  label: '1.0x (Standard)' }, // Baseline in the center
+  { val: 1.0,  label: '1.0x (Standard)' },
   { val: 1.5,  label: '1.5x' },
   { val: 2.0,  label: '2.0x' },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 16kHz PCM WAV ENCODER (Ensures 100% native compatibility with Gnani STT)
+// COMPLETE MULTILINGUAL UI STRINGS DICTIONARY FOR ALL 11 LANGUAGES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const UI_STRINGS = {
+  'kn-IN': {
+    appName: 'ನ್ಯಾಯಸೇತು',
+    appSub: 'NYAYSETU',
+    help: 'ಸಹಾಯ · Help',
+    langLabel: 'ಭಾಷೆ · Language (Code-Mixed with English)',
+    greeting: 'ನಮಸ್ಕಾರ, ಏನಾಯಿತು?',
+    greetingSub: 'Tell us in your own language. We do the paperwork.',
+    card1Title: 'ದೂರು ದಾಖಲಿಸಿ',
+    card1Sub: 'Cheated online? Speak. We write the complaint.',
+    card2Title: 'ನೋಟಿಸ್ ಅರ್ಥ ಮಾಡಿಕೊಳ್ಳಿ',
+    card2Sub: 'Got a legal letter? We explain it and read it aloud.',
+    emergencyTitle: 'Lost money just now? Call 1930 first.',
+    emergencySub: 'Banks can still freeze the money if you are quick.',
+    footerNote: 'Your words are deleted after 30 minutes. NyaySetu helps you write and understand. It is not a lawyer.',
+    intakeTitle: 'ದೂರು ದಾಖಲಿಸಿ',
+    intakePromptDefault: 'ಏನಾಯ್ತು ಅಂತ ಸ್ವಲ್ಪ ನಿಮ್ಮ ಮಾತಲ್ಲಿ ಹೇಳಿ.',
+    tapToSpeak: 'ಮಾತನಾಡಲು ಒತ್ತಿ',
+    tapAndSpeak: 'Tap and speak',
+    typeInstead: 'Type instead',
+    listening: 'ಕೇಳಿಸಿಕೊಳ್ಳುತ್ತಿದ್ದೇನೆ…',
+    stopSpeaking: 'ನಿಲ್ಲಿಸಲು ಒತ್ತಿ',
+    whatWeHeard: 'What we heard. Tap to fix a word.',
+    detailsSoFar: 'YOUR DETAILS SO FAR',
+    listenAgain: 'Listen again',
+    draftReady: 'ನಿಮ್ಮ ದೂರು ಸಿದ್ಧ',
+    draftSub: 'Please read it once. Tap anything that is wrong and fix it before you take it to the police.',
+    cyberDraftBadge: 'CYBERCRIME COMPLAINT',
+    draftTag: 'DRAFT',
+    narrativeTitle: 'ದೂರು ವಿವರ',
+    readFullText: 'Read the full text',
+    hideFullText: 'Hide full text',
+    disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
+    printPdf: 'Print or save as PDF',
+    shareWa: 'Share on WhatsApp',
+    startOver: 'Start over',
+    back: 'Back',
+    stepOf: 'of 8',
+    fields: {
+      complainant_name: 'ಪೂರ್ಣ ಹೆಸರು',
+      phone_number:     'ಮೊಬೈಲ್ ಸಂಖ್ಯೆ',
+      amount_lost:      'ನಷ್ಟವಾದ ಮೊತ್ತ',
+      bank_name:        'ಬ್ಯಾಂಕ್ ಹೆಸರು',
+      transaction_mode: 'ವಹಿವಾಟು ವಿಧಾನ',
+      incident_date:    'ಘಟನೆ ನಡೆದ ದಿನಾಂಕ',
+      incident_type:    'ವಂಚನೆಯ ವಿಧಾನ',
+      address:          'ಊರು / ಸ್ಥಳ',
+      description:      'ದೂರು ವಿವರ',
+    }
+  },
+  'hi-IN': {
+    appName: 'न्यायसेतु',
+    appSub: 'NYAYSETU',
+    help: 'मदद · Help',
+    langLabel: 'भाषा · Language (Code-Mixed with English)',
+    greeting: 'नमस्ते, क्या हुआ?',
+    greetingSub: 'Tell us in your own language. We do the paperwork.',
+    card1Title: 'शिकायत दर्ज करें',
+    card1Sub: 'Cheated online? Speak. We write the complaint.',
+    card2Title: 'नोटिस समझें',
+    card2Sub: 'Got a legal letter? We explain it and read it aloud.',
+    emergencyTitle: 'Lost money just now? Call 1930 first.',
+    emergencySub: 'Banks can still freeze the money if you are quick.',
+    footerNote: 'Your words are deleted after 30 minutes. NyaySetu helps you write and understand. It is not a lawyer.',
+    intakeTitle: 'शिकायत दर्ज करें',
+    intakePromptDefault: 'क्या हुआ, कृपया अपनी भाषा में बताएं।',
+    tapToSpeak: 'बोलने के लिए दबाएं',
+    tapAndSpeak: 'Tap and speak',
+    typeInstead: 'Type instead',
+    listening: 'सुन रहे हैं…',
+    stopSpeaking: 'रोकने के लिए दबाएं',
+    whatWeHeard: 'What we heard. Tap to fix a word.',
+    detailsSoFar: 'YOUR DETAILS SO FAR',
+    listenAgain: 'Listen again',
+    draftReady: 'आपकी शिकायत तैयार है',
+    draftSub: 'Please read it once. Tap anything that is wrong and fix it before you take it to the police.',
+    cyberDraftBadge: 'CYBERCRIME COMPLAINT',
+    draftTag: 'DRAFT',
+    narrativeTitle: 'शिकायत विवरण',
+    readFullText: 'Read the full text',
+    hideFullText: 'Hide full text',
+    disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
+    printPdf: 'Print or save as PDF',
+    shareWa: 'Share on WhatsApp',
+    startOver: 'Start over',
+    back: 'Back',
+    stepOf: 'of 8',
+    fields: {
+      complainant_name: 'पूरा नाम',
+      phone_number:     'मोबाइल नंबर',
+      amount_lost:      'खोई गई राशि',
+      bank_name:        'बैंक का नाम',
+      transaction_mode: 'लेनदेन का माध्यम',
+      incident_date:    'घटना की तारीख',
+      incident_type:    'धोखाधड़ी का प्रकार',
+      address:          'शहर / स्थान',
+      description:      'विवरण',
+    }
+  },
+  'ta-IN': {
+    appName: 'நியாயசேது',
+    appSub: 'NYAYSETU',
+    help: 'உதவி · Help',
+    langLabel: 'மொழி · Language (Code-Mixed with English)',
+    greeting: 'வணக்கம், என்ன ஆயிற்று?',
+    greetingSub: 'Tell us in your own language. We do the paperwork.',
+    card1Title: 'புகார் பதிவு செய்யவும்',
+    card1Sub: 'Cheated online? Speak. We write the complaint.',
+    card2Title: 'நோட்டீசை புரிந்துகொள்ளுங்கள்',
+    card2Sub: 'Got a legal letter? We explain it and read it aloud.',
+    emergencyTitle: 'Lost money just now? Call 1930 first.',
+    emergencySub: 'Banks can still freeze the money if you are quick.',
+    footerNote: 'Your words are deleted after 30 minutes. NyaySetu helps you write and understand. It is not a lawyer.',
+    intakeTitle: 'புகார் பதிவு',
+    intakePromptDefault: 'என்ன நடந்தது என்று உங்கள் மொழியில் கூறுங்கள்.',
+    tapToSpeak: 'பேச அழுத்தவும்',
+    tapAndSpeak: 'Tap and speak',
+    typeInstead: 'Type instead',
+    listening: 'கேட்கிறது…',
+    stopSpeaking: 'நிறுத்த அழுத்தவும்',
+    whatWeHeard: 'What we heard. Tap to fix a word.',
+    detailsSoFar: 'YOUR DETAILS SO FAR',
+    listenAgain: 'Listen again',
+    draftReady: 'உங்கள் புகார் தயார்',
+    draftSub: 'Please read it once. Tap anything that is wrong and fix it before you take it to the police.',
+    cyberDraftBadge: 'CYBERCRIME COMPLAINT',
+    draftTag: 'DRAFT',
+    narrativeTitle: 'புகார் விவரம்',
+    readFullText: 'Read the full text',
+    hideFullText: 'Hide full text',
+    disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
+    printPdf: 'Print or save as PDF',
+    shareWa: 'Share on WhatsApp',
+    startOver: 'Start over',
+    back: 'Back',
+    stepOf: 'of 8',
+    fields: {
+      complainant_name: 'முழு பெயர்',
+      phone_number:     'கைபேசி எண்',
+      amount_lost:      'இழந்த தொகை',
+      bank_name:        'வங்கி பெயர்',
+      transaction_mode: 'பரிவர்த்தனை முறை',
+      incident_date:    'சம்பவ தேதி',
+      incident_type:    'மோசடி வகை',
+      address:          'ஊர் / இடம்',
+      description:      'விவரம்',
+    }
+  },
+  'te-IN': {
+    appName: 'న్యాయసేతు',
+    appSub: 'NYAYSETU',
+    help: 'సహాయం · Help',
+    langLabel: 'భాష · Language (Code-Mixed with English)',
+    greeting: 'నమస్కారం, ఏమి జరిగింది?',
+    greetingSub: 'Tell us in your own language. We do the paperwork.',
+    card1Title: 'ఫిర్యాదు చేయండి',
+    card1Sub: 'Cheated online? Speak. We write the complaint.',
+    card2Title: 'నోటీస్ అర్థం చేసుకోండి',
+    card2Sub: 'Got a legal letter? We explain it and read it aloud.',
+    emergencyTitle: 'Lost money just now? Call 1930 first.',
+    emergencySub: 'Banks can still freeze the money if you are quick.',
+    footerNote: 'Your words are deleted after 30 minutes. NyaySetu helps you write and understand. It is not a lawyer.',
+    intakeTitle: 'ఫిర్యాదు నమోదు',
+    intakePromptDefault: 'ఏమి జరిగిందో మీ మాటల్లో క్లుప్తంగా చెప్పండి.',
+    tapToSpeak: 'మాట్లాడటానికి నొక్కండి',
+    tapAndSpeak: 'Tap and speak',
+    typeInstead: 'Type instead',
+    listening: 'వింటున్నాము…',
+    stopSpeaking: 'ఆపడానికి నొక్కండి',
+    whatWeHeard: 'What we heard. Tap to fix a word.',
+    detailsSoFar: 'YOUR DETAILS SO FAR',
+    listenAgain: 'Listen again',
+    draftReady: 'మీ ఫిర్యాదు సిద్ధంగా ఉంది',
+    draftSub: 'Please read it once. Tap anything that is wrong and fix it before you take it to the police.',
+    cyberDraftBadge: 'CYBERCRIME COMPLAINT',
+    draftTag: 'DRAFT',
+    narrativeTitle: 'ఫిర్యాదు వివరాలు',
+    readFullText: 'Read the full text',
+    hideFullText: 'Hide full text',
+    disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
+    printPdf: 'Print or save as PDF',
+    shareWa: 'Share on WhatsApp',
+    startOver: 'Start over',
+    back: 'Back',
+    stepOf: 'of 8',
+    fields: {
+      complainant_name: 'పూర్తి పేరు',
+      phone_number:     'మొబైల్ నంబర్',
+      amount_lost:      'కోల్పోయిన మొత్తం',
+      bank_name:        'బ్యాంకు పేరు',
+      transaction_mode: 'లావాదేవీ విధానం',
+      incident_date:    'ఘటన తేదీ',
+      incident_type:    'మోసం రకం',
+      address:          'ఊరు / ప్రాంతం',
+      description:      'వివరాలు',
+    }
+  },
+  'mr-IN': {
+    appName: 'न्यायसेतू',
+    appSub: 'NYAYSETU',
+    help: 'मदत · Help',
+    langLabel: 'भाषा · Language (Code-Mixed with English)',
+    greeting: 'नमस्कार, काय घडले?',
+    greetingSub: 'Tell us in your own language. We do the paperwork.',
+    card1Title: 'तक्रार नोंदवा',
+    card1Sub: 'Cheated online? Speak. We write the complaint.',
+    card2Title: 'नोटीस समजावून घ्या',
+    card2Sub: 'Got a legal letter? We explain it and read it aloud.',
+    emergencyTitle: 'Lost money just now? Call 1930 first.',
+    emergencySub: 'Banks can still freeze the money if you are quick.',
+    footerNote: 'Your words are deleted after 30 minutes. NyaySetu helps you write and understand. It is not a lawyer.',
+    intakeTitle: 'तक्रार नोंदणी',
+    intakePromptDefault: 'नेमके काय घडले ते थोडक्यात सांगा.',
+    tapToSpeak: 'बोलण्यासाठी टॅप करा',
+    tapAndSpeak: 'Tap and speak',
+    typeInstead: 'Type instead',
+    listening: 'ऐकत आहोत…',
+    stopSpeaking: 'थांबवण्यासाठी टॅप करा',
+    whatWeHeard: 'What we heard. Tap to fix a word.',
+    detailsSoFar: 'YOUR DETAILS SO FAR',
+    listenAgain: 'Listen again',
+    draftReady: 'आपली तक्रार तयार आहे',
+    draftSub: 'Please read it once. Tap anything that is wrong and fix it before you take it to the police.',
+    cyberDraftBadge: 'CYBERCRIME COMPLAINT',
+    draftTag: 'DRAFT',
+    narrativeTitle: 'तक्रारीचा तपशील',
+    readFullText: 'Read the full text',
+    hideFullText: 'Hide full text',
+    disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
+    printPdf: 'Print or save as PDF',
+    shareWa: 'Share on WhatsApp',
+    startOver: 'Start over',
+    back: 'Back',
+    stepOf: 'of 8',
+    fields: {
+      complainant_name: 'पूर्ण नाव',
+      phone_number:     'मोबाईल नंबर',
+      amount_lost:      'नुकसानीची रक्कम',
+      bank_name:        'बँकेचे नाव',
+      transaction_mode: 'व्यवहाराची पद्धत',
+      incident_date:    'घटनेची तारीख',
+      incident_type:    'फसवणुकीचा प्रकार',
+      address:          'गाव / शहर',
+      description:      'तपशील',
+    }
+  },
+  'bn-IN': {
+    appName: 'ন্যায়সেতু',
+    appSub: 'NYAYSETU',
+    help: 'সাহায্য · Help',
+    langLabel: 'ভাষা · Language (Code-Mixed with English)',
+    greeting: 'নমস্কার, কী ঘটেছে?',
+    greetingSub: 'Tell us in your own language. We do the paperwork.',
+    card1Title: 'অভিযোগ দায়ের করুন',
+    card1Sub: 'Cheated online? Speak. We write the complaint.',
+    card2Title: 'নোটিশ বুঝুন',
+    card2Sub: 'Got a legal letter? We explain it and read it aloud.',
+    emergencyTitle: 'Lost money just now? Call 1930 first.',
+    emergencySub: 'Banks can still freeze the money if you are quick.',
+    footerNote: 'Your words are deleted after 30 minutes. NyaySetu helps you write and understand. It is not a lawyer.',
+    intakeTitle: 'অভিযোগ দায়ের',
+    intakePromptDefault: 'কী হয়েছিল তা আপনার ভাষায় সংক্ষেপে বলুন।',
+    tapToSpeak: 'বলতে ট্যাপ করুন',
+    tapAndSpeak: 'Tap and speak',
+    typeInstead: 'Type instead',
+    listening: 'শুনছি…',
+    stopSpeaking: 'থামাতে ট্যাপ করুন',
+    whatWeHeard: 'What we heard. Tap to fix a word.',
+    detailsSoFar: 'YOUR DETAILS SO FAR',
+    listenAgain: 'Listen again',
+    draftReady: 'আপনার অভিযোগ প্রস্তুত',
+    draftSub: 'Please read it once. Tap anything that is wrong and fix it before you take it to the police.',
+    cyberDraftBadge: 'CYBERCRIME COMPLAINT',
+    draftTag: 'DRAFT',
+    narrativeTitle: 'অভিযোগের বিবরণ',
+    readFullText: 'Read the full text',
+    hideFullText: 'Hide full text',
+    disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
+    printPdf: 'Print or save as PDF',
+    shareWa: 'Share on WhatsApp',
+    startOver: 'Start over',
+    back: 'Back',
+    stepOf: 'of 8',
+    fields: {
+      complainant_name: 'পুরো নাম',
+      phone_number:     'মোবাইল নম্বর',
+      amount_lost:      'ক্ষতির পরিমাণ',
+      bank_name:        'ব্যাঙ্কের নাম',
+      transaction_mode: 'লেনদেনের মাধ্যম',
+      incident_date:    'ঘটনার তারিখ',
+      incident_type:    'প্রতারণার ধরন',
+      address:          'শহর / গ্রাম',
+      description:      'বিবরণ',
+    }
+  },
+  'gu-IN': {
+    appName: 'ન્યાયસેતુ',
+    appSub: 'NYAYSETU',
+    help: 'મદદ · Help',
+    langLabel: 'ભાષા · Language (Code-Mixed with English)',
+    greeting: 'નમસ્તે, શું થયું?',
+    greetingSub: 'Tell us in your own language. We do the paperwork.',
+    card1Title: 'ફરિયાદ નોંધાવો',
+    card1Sub: 'Cheated online? Speak. We write the complaint.',
+    card2Title: 'નોટિસ સમજો',
+    card2Sub: 'Got a legal letter? We explain it and read it aloud.',
+    emergencyTitle: 'Lost money just now? Call 1930 first.',
+    emergencySub: 'Banks can still freeze the money if you are quick.',
+    footerNote: 'Your words are deleted after 30 minutes. NyaySetu helps you write and understand. It is not a lawyer.',
+    intakeTitle: 'ફરિયાદ નોંધણી',
+    intakePromptDefault: 'શું થયું હતું તે ટૂંકમાં તમારી ભાષામાં જણાવો.',
+    tapToSpeak: 'બોલવા માટે દબાવો',
+    tapAndSpeak: 'Tap and speak',
+    typeInstead: 'Type instead',
+    listening: 'સાંભળી રહ્યા છીએ…',
+    stopSpeaking: 'રોકવા માટે દબાવો',
+    whatWeHeard: 'What we heard. Tap to fix a word.',
+    detailsSoFar: 'YOUR DETAILS SO FAR',
+    listenAgain: 'Listen again',
+    draftReady: 'તમારી ફરિયાદ તૈયાર છે',
+    draftSub: 'Please read it once. Tap anything that is wrong and fix it before you take it to the police.',
+    cyberDraftBadge: 'CYBERCRIME COMPLAINT',
+    draftTag: 'DRAFT',
+    narrativeTitle: 'ફરિયાદ વિગત',
+    readFullText: 'Read the full text',
+    hideFullText: 'Hide full text',
+    disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
+    printPdf: 'Print or save as PDF',
+    shareWa: 'Share on WhatsApp',
+    startOver: 'Start over',
+    back: 'Back',
+    stepOf: 'of 8',
+    fields: {
+      complainant_name: 'પૂરું નામ',
+      phone_number:     'મોબાઇલ નંબર',
+      amount_lost:      'ગુમાવેલ રકમ',
+      bank_name:        'બેંકનું નામ',
+      transaction_mode: 'ટ્રાન્ઝેક્શન મોડ',
+      incident_date:    'ઘટનાની તારીખ',
+      incident_type:    'છેતરપિંડીનો પ્રકાર',
+      address:          'ગામ / શહેર',
+      description:      'વિગત',
+    }
+  },
+  'ml-IN': {
+    appName: 'ന്യായസേതു',
+    appSub: 'NYAYSETU',
+    help: 'സഹായം · Help',
+    langLabel: 'ഭാഷ · Language (Code-Mixed with English)',
+    greeting: 'നമസ്കാരം, എന്താണ് സംഭവിച്ചത്?',
+    greetingSub: 'Tell us in your own language. We do the paperwork.',
+    card1Title: 'പരാതി നൽകുക',
+    card1Sub: 'Cheated online? Speak. We write the complaint.',
+    card2Title: 'നോട്ടീസ് മനസിലാക്കുക',
+    card2Sub: 'Got a legal letter? We explain it and read it aloud.',
+    emergencyTitle: 'Lost money just now? Call 1930 first.',
+    emergencySub: 'Banks can still freeze the money if you are quick.',
+    footerNote: 'Your words are deleted after 30 minutes. NyaySetu helps you write and understand. It is not a lawyer.',
+    intakeTitle: 'പരാതി നൽകൽ',
+    intakePromptDefault: 'എന്താണ് സംഭവിച്ചതെന്ന് നിങ്ങളുടെ വാക്കുകളിൽ പറയൂ.',
+    tapToSpeak: 'സംസാരിക്കാൻ അമർത്തുക',
+    tapAndSpeak: 'Tap and speak',
+    typeInstead: 'Type instead',
+    listening: 'കേൾക്കുന്നു…',
+    stopSpeaking: 'നിർത്താൻ അമർത്തുക',
+    whatWeHeard: 'What we heard. Tap to fix a word.',
+    detailsSoFar: 'YOUR DETAILS SO FAR',
+    listenAgain: 'Listen again',
+    draftReady: 'നിങ്ങളുടെ പരാതി തയ്യാറാണ്',
+    draftSub: 'Please read it once. Tap anything that is wrong and fix it before you take it to the police.',
+    cyberDraftBadge: 'CYBERCRIME COMPLAINT',
+    draftTag: 'DRAFT',
+    narrativeTitle: 'പരാതി വിവരണം',
+    readFullText: 'Read the full text',
+    hideFullText: 'Hide full text',
+    disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
+    printPdf: 'Print or save as PDF',
+    shareWa: 'Share on WhatsApp',
+    startOver: 'Start over',
+    back: 'Back',
+    stepOf: 'of 8',
+    fields: {
+      complainant_name: 'പൂർണ്ണ നാമം',
+      phone_number:     'മൊബൈൽ നമ്പർ',
+      amount_lost:      'നഷ്ടപ്പെട്ട തുക',
+      bank_name:        'ബാങ്കിന്റെ പേര്',
+      transaction_mode: 'ഇടപാട് രീതി',
+      incident_date:    'സംഭവം നടന്ന തീയതി',
+      incident_type:    'തട്ടിപ്പ് രീതി',
+      address:          'നാട് / സ്ഥലം',
+      description:      'വിവരണം',
+    }
+  },
+  'pa-IN': {
+    appName: 'ਨਿਆਏਸੇਤੂ',
+    appSub: 'NYAYSETU',
+    help: 'ਮਦਦ · Help',
+    langLabel: 'ਭਾਸ਼ਾ · Language (Code-Mixed with English)',
+    greeting: 'ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ, ਕੀ ਹੋਇਆ?',
+    greetingSub: 'Tell us in your own language. We do the paperwork.',
+    card1Title: 'ਸ਼ਿਕਾਇਤ ਦਰਜ ਕਰੋ',
+    card1Sub: 'Cheated online? Speak. We write the complaint.',
+    card2Title: 'ਨੋਟਿਸ ਸਮਝੋ',
+    card2Sub: 'Got a legal letter? We explain it and read it aloud.',
+    emergencyTitle: 'Lost money just now? Call 1930 first.',
+    emergencySub: 'Banks can still freeze the money if you are quick.',
+    footerNote: 'Your words are deleted after 30 minutes. NyaySetu helps you write and understand. It is not a lawyer.',
+    intakeTitle: 'ਸ਼ਿਕਾਇਤ ਦਰਜ',
+    intakePromptDefault: 'ਕੀ ਹੋਇਆ ਸੀ, ਸੰਖੇਪ ਵਿੱਚ ਦੱਸੋ।',
+    tapToSpeak: 'ਬੋਲਣ ਲਈ ਟੈਪ ਕਰੋ',
+    tapAndSpeak: 'Tap and speak',
+    typeInstead: 'Type instead',
+    listening: 'ਸੁਣ ਰਹੇ ਹਾਂ…',
+    stopSpeaking: 'ਰੋਕਣ ਲਈ ਟੈਪ ਕਰੋ',
+    whatWeHeard: 'What we heard. Tap to fix a word.',
+    detailsSoFar: 'YOUR DETAILS SO FAR',
+    listenAgain: 'Listen again',
+    draftReady: 'ਤੁਹਾਡੀ ਸ਼ਿਕਾਇਤ ਤਿਆਰ ਹੈ',
+    draftSub: 'Please read it once. Tap anything that is wrong and fix it before you take it to the police.',
+    cyberDraftBadge: 'CYBERCRIME COMPLAINT',
+    draftTag: 'DRAFT',
+    narrativeTitle: 'ਸ਼ਿਕਾਇਤ ਵੇਰਵਾ',
+    readFullText: 'Read the full text',
+    hideFullText: 'Hide full text',
+    disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
+    printPdf: 'Print or save as PDF',
+    shareWa: 'Share on WhatsApp',
+    startOver: 'Start over',
+    back: 'Back',
+    stepOf: 'of 8',
+    fields: {
+      complainant_name: 'ਪੂਰਾ ਨਾਮ',
+      phone_number:     'ਮੋਬਾਈਲ ਨੰਬਰ',
+      amount_lost:      'ਗੁਆਚੀ ਰਕਮ',
+      bank_name:        'ਬੈਂਕ ਦਾ ਨਾਮ',
+      transaction_mode: 'ਲੈਣ-ਦੇਣ ਦਾ ਤਰੀਕਾ',
+      incident_date:    'ਘਟਨਾ ਦੀ ਮਿਤੀ',
+      incident_type:    'ਧੋਖਾਧੜੀ ਦੀ ਕਿਸਮ',
+      address:          'ਸ਼ਹਿਰ / ਪਿੰਡ',
+      description:      'ਵੇਰਵਾ',
+    }
+  },
+  'as-IN': {
+    appName: 'ন্যায়সেতু',
+    appSub: 'NYAYSETU',
+    help: 'সহায় · Help',
+    langLabel: 'ভাষা · Language (Code-Mixed with English)',
+    greeting: 'নমস্কাৰ, কি হ’ল?',
+    greetingSub: 'Tell us in your own language. We do the paperwork.',
+    card1Title: 'অভিযোগ দাখিল কৰক',
+    card1Sub: 'Cheated online? Speak. We write the complaint.',
+    card2Title: 'জাননী বুজি লওক',
+    card2Sub: 'Got a legal letter? We explain it and read it aloud.',
+    emergencyTitle: 'Lost money just now? Call 1930 first.',
+    emergencySub: 'Banks can still freeze the money if you are quick.',
+    footerNote: 'Your words are deleted after 30 minutes. NyaySetu helps you write and understand. It is not a lawyer.',
+    intakeTitle: 'অভিযোগ দাখিল',
+    intakePromptDefault: 'কি হৈছিল, আপোনাৰ নিজৰ ভাষাত চমুকৈ কওক।',
+    tapToSpeak: 'ক’বলৈ টিপক',
+    tapAndSpeak: 'Tap and speak',
+    typeInstead: 'Type instead',
+    listening: 'শুনি আছোঁ…',
+    stopSpeaking: 'ৰখাবলৈ টিপক',
+    whatWeHeard: 'What we heard. Tap to fix a word.',
+    detailsSoFar: 'YOUR DETAILS SO FAR',
+    listenAgain: 'Listen again',
+    draftReady: 'আপোনাৰ অভিযোগ প্ৰস্তুত',
+    draftSub: 'Please read it once. Tap anything that is wrong and fix it before you take it to the police.',
+    cyberDraftBadge: 'CYBERCRIME COMPLAINT',
+    draftTag: 'DRAFT',
+    narrativeTitle: 'অভিযোগৰ বিৱৰণ',
+    readFullText: 'Read the full text',
+    hideFullText: 'Hide full text',
+    disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
+    printPdf: 'Print or save as PDF',
+    shareWa: 'Share on WhatsApp',
+    startOver: 'Start over',
+    back: 'Back',
+    stepOf: 'of 8',
+    fields: {
+      complainant_name: 'সম্পূৰ্ণ নাম',
+      phone_number:     'মোবাইল নম্বৰ',
+      amount_lost:      'লোকচানৰ পৰিমাণ',
+      bank_name:        'বেংকৰ নাম',
+      transaction_mode: 'লেনদেনৰ মাধ্যম',
+      incident_date:    'ঘটনাৰ তাৰিখ',
+      incident_type:    'প্ৰতাৰণাৰ প্ৰকাৰ',
+      address:          'চহৰ / গাঁও',
+      description:      'বিৱৰণ',
+    }
+  },
+  'en-IN': {
+    appName: 'NyaySetu',
+    appSub: 'NYAYSETU',
+    help: 'Help',
+    langLabel: 'Language (Code-Mixed with English)',
+    greeting: 'Hello, what happened?',
+    greetingSub: 'Tell us in your own language. We do the paperwork.',
+    card1Title: 'File a complaint',
+    card1Sub: 'Cheated online? Speak. We write the complaint.',
+    card2Title: 'Understand notice',
+    card2Sub: 'Got a legal letter? We explain it and read it aloud.',
+    emergencyTitle: 'Lost money just now? Call 1930 first.',
+    emergencySub: 'Banks can still freeze the money if you are quick.',
+    footerNote: 'Your words are deleted after 30 minutes. NyaySetu helps you write and understand. It is not a lawyer.',
+    intakeTitle: 'File a Complaint',
+    intakePromptDefault: 'Tell us briefly what happened in your own words.',
+    tapToSpeak: 'Tap to speak',
+    tapAndSpeak: 'Tap and speak',
+    typeInstead: 'Type instead',
+    listening: 'Listening…',
+    stopSpeaking: 'Tap to stop',
+    whatWeHeard: 'What we heard. Tap to fix a word.',
+    detailsSoFar: 'YOUR DETAILS SO FAR',
+    listenAgain: 'Listen again',
+    draftReady: 'Your draft is ready',
+    draftSub: 'Please read it once. Tap anything that is wrong and fix it before you take it to the police.',
+    cyberDraftBadge: 'CYBERCRIME COMPLAINT',
+    draftTag: 'DRAFT',
+    narrativeTitle: 'Complaint Details',
+    readFullText: 'Read the full text',
+    hideFullText: 'Hide full text',
+    disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
+    printPdf: 'Print or save as PDF',
+    shareWa: 'Share on WhatsApp',
+    startOver: 'Start over',
+    back: 'Back',
+    stepOf: 'of 8',
+    fields: {
+      complainant_name: 'Full Name',
+      phone_number:     'Mobile Number',
+      amount_lost:      'Amount Lost',
+      bank_name:        'Bank Name',
+      transaction_mode: 'Transaction Mode',
+      incident_date:    'Incident Date',
+      incident_type:    'Crime Category',
+      address:          'Location / Town',
+      description:      'Description',
+    }
+  }
+};
+
+function getStrings(langCode) {
+  const selected = UI_STRINGS[langCode] || {};
+  const fallback = UI_STRINGS['kn-IN'];
+  return {
+    ...fallback,
+    ...selected,
+    fields: {
+      ...fallback.fields,
+      ...(selected.fields || {}),
+    }
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 16kHz PCM WAV ENCODER
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function encodeWAV(samples, sampleRate = 16000) {
@@ -65,9 +637,9 @@ function encodeWAV(samples, sampleRate = 16000) {
   view.setUint16(20, 1, true);              // AudioFormat (1 = PCM)
   view.setUint16(22, 1, true);              // NumChannels (1 = Mono)
   view.setUint32(24, sampleRate, true);     // SampleRate
-  view.setUint32(28, sampleRate * 2, true); // ByteRate (SampleRate * 1 * 16/8)
-  view.setUint16(32, 2, true);              // BlockAlign (1 * 16/8 = 2)
-  view.setUint16(34, 16, true);             // BitsPerSample (16 bits)
+  view.setUint32(28, sampleRate * 2, true); // ByteRate
+  view.setUint16(32, 2, true);              // BlockAlign
+  view.setUint16(34, 16, true);             // BitsPerSample
   writeString(view, 36, 'data');
   view.setUint32(40, samples.length * 2, true);
 
@@ -82,28 +654,31 @@ function encodeWAV(samples, sampleRate = 16000) {
   return new Blob([view], { type: 'audio/wav' });
 }
 
-const ENTITY_CONFIG = [
-  { key: 'complainant_name',    label: 'Complainant Name',   icon: User        },
-  { key: 'phone_number',        label: 'Phone Number',       icon: Phone       },
-  { key: 'amount_lost',         label: 'Amount Lost',        icon: IndianRupee },
-  { key: 'upi_id',              label: 'UPI / Wallet ID',    icon: Hash        },
-  { key: 'email',               label: 'Email Address',      icon: Globe       },
-  { key: 'bank_name',           label: 'Bank / Institution', icon: Building2   },
-  { key: 'incident_date',       label: 'Incident Date',      icon: Calendar    },
-  { key: 'incident_time',       label: 'Incident Time',      icon: Clock       },
-  { key: 'incident_type',       label: 'Crime Category',     icon: AlertCircle },
-  { key: 'fraud_method',        label: 'Fraud Method',       icon: Search      },
-  { key: 'address',             label: 'Address',            icon: MapPin      },
-  { key: 'suspect_description', label: 'Suspect Details',    icon: Shield      },
+const INTAKE_FIELDS = [
+  { key: 'complainant_name', icon: User        },
+  { key: 'phone_number',     icon: Phone       },
+  { key: 'amount_lost',      icon: IndianRupee },
+  { key: 'bank_name',        icon: Building2   },
+  { key: 'transaction_mode', icon: CreditCard  },
+  { key: 'incident_date',    icon: Calendar    },
+  { key: 'incident_type',    icon: AlertCircle },
+  { key: 'address',          icon: MapPin      },
+  { key: 'description',      icon: FileText    },
 ];
 
-const SAMPLE_LEGAL =
-  'Under Section 66C of the Information Technology Act, 2000, whoever fraudulently ' +
-  'or dishonestly makes use of the electronic signature, password or any other unique ' +
-  'identification feature of any other person, shall be punished with imprisonment of ' +
-  'either description for a term which may extend to three years and shall also be ' +
-  'liable to fine which may extend to rupees one lakh.';
-
+const GREETINGS = {
+  'kn-IN': 'ನಮಸ್ಕಾರ! ನಾನು ನ್ಯಾಯಸೇತು ಕಾನೂನು ಸಹಾಯಕ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ದೂರನ್ನು ವಿವರಿಸಿ, ಅದನ್ನು ದಾಖಲಿಸಲು ನಾನು ನಿಮಗೆ ಹಂತ-ಹಂತವಾಗಿ ಸಹಾಯ ಮಾಡುತ್ತೇನೆ.',
+  'hi-IN': 'नमस्ते! मैं न्यायसेतु कानूनी सहायक हूँ। कृपया अपनी शिकायत बताएं, मैं इसे दर्ज करने में आपकी मदद करूँगा।',
+  'en-IN': 'Namaste! I am NyaySetu Legal Assistant. Please describe your complaint and I will guide you step-by-step to file it.',
+  'ta-IN': 'வணக்கம்! நான் நியாயசேது சட்ட உதவியாளர். உங்கள் புகாரை விவரிக்கவும், அதை பதிவு செய்ய நான் உங்களுக்கு படிப்படியாக உதவுவேன்.',
+  'te-IN': 'నమస్కారం! నేను న్యాయసేతు న్యాయ సహాయకుడిని. దయచేసి మీ ఫిర్యాదును వివరించండి, దాన్ని నమోదు చేయడంలో నేను మీకు దశలవారీగా సహాయం చేస్తాను.',
+  'mr-IN': 'नमस्कार! मी न्यायसेतू कायदेशीर सहाय्यक आहे. कृपया आपली तक्रार सांगा, मी ती नोंदवण्यासाठी आपल्याला मदत करेन.',
+  'bn-IN': 'নমস্কার! আমি ন্যায়সেতু আইনি সহকারী। অনুগ্রহ করে আপনার অভিযোগটি বলুন, আমি এটি নথিভুক্ত করতে আপনাকে সাহায্য করব।',
+  'gu-IN': 'નમસ્તે! હું ન્યાયસેતુ કાનૂની સહાયક છું. કૃપા કરીને તમારી ફરિયાદ જણાવો, હું તેને નોંધવામાં તમારી મદદ કરીશ.',
+  'ml-IN': 'നമസ്കാരം! ഞാൻ ന്യായസേതു നിയമ സഹായിയാണ്. ദയവായി നിങ്ങളുടെ പരാതി വ്യക്തമാക്കുക, ഞാൻ സഹായിക്കാം.',
+  'pa-IN': 'ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਨਿਆਏਸੇਤੂ ਕਾਨੂੰਨੀ ਸਹਾਇਕ ਹਾਂ। ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੀ ਸ਼ਿਕਾਇਤ ਦੱਸੋ, ਮੈਂ ਇਸਨੂੰ ਦਰਜ ਕਰਨ ਵਿੱਚ ਤੁਹਾਡੀ ਮਦਦ ਕਰਾਂਗਾ।',
+  'as-IN': 'নমস্কাৰ! মই ন্যায়সেতু আইনী সহায়ক। অনুগ্ৰহ কৰি আপোনাৰ অভিযোগ কওক, মই সহায় কৰিম।',
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TOAST SYSTEM
@@ -114,7 +689,7 @@ function useToast() {
   const push = useCallback((msg, type = 'info') => {
     const id = Date.now() + Math.random();
     setToasts(prev => [...prev, { id, msg, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4500);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
   }, []);
   const remove = useCallback(id => setToasts(prev => prev.filter(t => t.id !== id)), []);
   return { toasts, push, remove };
@@ -123,26 +698,25 @@ function useToast() {
 function ToastContainer({ toasts, remove }) {
   if (!toasts.length) return null;
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-xs w-full">
+    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full">
       {toasts.map(t => (
         <div
           key={t.id}
           className={[
-            'animate-slide-in flex items-start gap-3 px-4 py-3 rounded-xl',
-            'shadow-2xl border backdrop-blur-xl pointer-events-auto text-sm font-medium',
+            'animate-slide-in flex items-start gap-3 px-4 py-3 rounded-2xl shadow-lg border backdrop-blur-md pointer-events-auto text-xs sm:text-sm font-medium',
             t.type === 'success'
-              ? 'bg-emerald-950/90 border-emerald-700/40 text-emerald-100'
+              ? 'bg-[#EAF4EC] border-[#2D6A4F]/30 text-[#2D6A4F]'
               : t.type === 'error'
-              ? 'bg-rose-950/90 border-rose-700/40 text-rose-100'
-              : 'bg-slate-900/90 border-slate-700/40 text-slate-100',
+              ? 'bg-[#FEE2E2] border-[#E63946]/30 text-[#991B1B]'
+              : 'bg-white border-[#1D3557]/15 text-[#1D3557]',
           ].join(' ')}
         >
           {t.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
           ) : t.type === 'error' ? (
-            <AlertCircle className="w-4 h-4 text-rose-400 mt-0.5 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-rose-600 mt-0.5 shrink-0" />
           ) : (
-            <Activity className="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" />
+            <Activity className="w-4 h-4 text-[#1D3557] mt-0.5 shrink-0" />
           )}
           <span className="flex-1 leading-snug">{t.msg}</span>
           <button
@@ -157,7 +731,6 @@ function ToastContainer({ toasts, remove }) {
   );
 }
 
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // WAVEFORM VISUALIZER
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -171,12 +744,12 @@ const BAR_DURATIONS = [0.6, 0.75, 0.9, 0.65, 0.8, 0.7, 0.85, 0.6, 0.78, 0.68,
 
 function WaveformVisualizer({ active }) {
   return (
-    <div className="flex items-center justify-center gap-0.5 h-14 w-full">
+    <div className="flex items-center justify-center gap-1 h-12 w-full">
       {BAR_DELAYS.map((delay, i) => (
         <div
           key={i}
           className={`w-1 rounded-full transition-colors duration-300 ${
-            active ? 'bg-rose-500' : 'bg-slate-700'
+            active ? 'bg-[#1D3557]' : 'bg-[#1D3557]/20'
           }`}
           style={{
             height: '4px',
@@ -193,222 +766,277 @@ function WaveformVisualizer({ active }) {
   );
 }
 
-
 // ═══════════════════════════════════════════════════════════════════════════════
-// SKELETON LOADER
+// CARD WRAPPER COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function SkeletonLine({ w = 'w-full', h = 'h-4' }) {
-  return <div className={`${w} ${h} rounded-lg bg-slate-800/70 animate-pulse`} />;
-}
-
-function ProcessingCard() {
+function Card({ children, className = '', onClick }) {
   return (
-    <GlassCard className="space-y-4">
-      <div className="flex items-center gap-3">
-        <Loader2 className="w-5 h-5 text-indigo-400 animate-spin shrink-0" />
-        <span className="text-sm font-semibold text-slate-300">Processing with Gnani Prisma STT…</span>
-      </div>
-      <SkeletonLine h="h-3" w="w-3/4" />
-      <SkeletonLine h="h-16" />
-      <div className="grid grid-cols-2 gap-3">
-        {[0,1,2,3].map(i => <SkeletonLine key={i} h="h-10" />)}
-      </div>
-    </GlassCard>
+    <div
+      onClick={onClick}
+      className={[
+        'bg-white rounded-2xl shadow-sm border border-[#1D3557]/10 p-5 transition-all',
+        onClick ? 'cursor-pointer hover:shadow-md hover:border-[#1D3557]/25' : '',
+        className,
+      ].join(' ')}
+    >
+      {children}
+    </div>
   );
 }
 
-
 // ═══════════════════════════════════════════════════════════════════════════════
-// ROOT APP
+// ROOT APP COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export default function App() {
-  const [tab, setTab] = useState('grievance');
+  const [screen, setScreen] = useState('home'); // 'home' | 'grievance' | 'simplifier'
+  const [language, setLanguage] = useState('kn-IN');
   const { toasts, push: toast, remove } = useToast();
 
+  const handleLanguageChange = (code) => {
+    setLanguage(code);
+  };
+
   return (
-    <div className="min-h-screen bg-[#030712] text-slate-100 font-sans">
+    <div className="min-h-screen bg-[#FDFBF7] text-[#1D3557] font-sans antialiased selection:bg-[#1D3557]/15">
       <ToastContainer toasts={toasts} remove={remove} />
-      <Header />
-      <main className="max-w-6xl mx-auto px-4 pt-5 pb-24 space-y-4">
-        <TabSwitcher active={tab} onChange={setTab} />
-        {tab === 'grievance'
-          ? <GrievanceFlow toast={toast} />
-          : <SimplifierFlow toast={toast} />}
-      </main>
+
+      {screen === 'home' && (
+        <HomeScreen
+          language={language}
+          onLanguageChange={handleLanguageChange}
+          onNavigate={setScreen}
+          toast={toast}
+        />
+      )}
+
+      {screen === 'grievance' && (
+        <GrievanceScreen
+          language={language}
+          onLanguageChange={handleLanguageChange}
+          onBack={() => setScreen('home')}
+          toast={toast}
+        />
+      )}
+
+      {screen === 'simplifier' && (
+        <SimplifierScreen
+          language={language}
+          onLanguageChange={handleLanguageChange}
+          onBack={() => setScreen('home')}
+          toast={toast}
+        />
+      )}
     </div>
   );
 }
 
-
 // ═══════════════════════════════════════════════════════════════════════════════
-// HEADER
+// 1. LANDING / HOME SCREEN
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function Header() {
+function HomeScreen({ language, onLanguageChange, onNavigate, toast }) {
+  const strings = getStrings(language);
+
   return (
-    <header className="relative border-b border-slate-800/60">
-      {/* Indian tricolour accent line */}
-      <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-[#FF9933] via-white to-[#046A38]" />
+    <div className="min-h-screen flex flex-col justify-between max-w-xl mx-auto px-5 py-6">
+      <div className="space-y-6">
 
-      <div className="max-w-6xl mx-auto px-4 py-5 flex items-center gap-4">
-        {/* Logo mark */}
-        <div className="w-11 h-11 rounded-2xl bg-indigo-600/15 border border-indigo-500/25 flex items-center justify-center shrink-0">
-          <Scale className="w-6 h-6 text-indigo-400" />
+        {/* Top Header: Logo & Help */}
+        <div className="flex items-center justify-between pt-2">
+          <div>
+            <h1 className="text-3xl font-black text-[#1D3557] tracking-tight">
+              {strings.appName}
+            </h1>
+            <p className="text-xs font-bold text-[#1D3557]/60 tracking-widest uppercase mt-0.5">
+              {strings.appSub}
+            </p>
+          </div>
+
+          <button
+            onClick={() => toast('Call 1930 for cyber fraud emergencies or speak your complaint below.', 'info')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[#1D3557]/70 hover:text-[#1D3557] hover:bg-black/5 transition-all"
+          >
+            <HelpCircle className="w-4 h-4 text-[#1D3557]" />
+            <span>{strings.help}</span>
+          </button>
         </div>
 
-        {/* Wordmark */}
-        <div>
-          <div className="flex items-baseline gap-2">
-            <h1 className="text-xl font-black tracking-tight text-white">NyaySetu</h1>
-            <span className="text-lg font-light text-slate-500">न्यायसेतु</span>
+        {/* Language Selector Pills — All Gnani API Supported Languages with English integration */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-bold text-[#1D3557]/70 uppercase tracking-wider">
+              {strings.langLabel}
+            </p>
+            <span className="text-[10px] font-bold text-[#1D3557]/60 bg-black/5 px-2 py-0.5 rounded-full">
+              Gnani.ai Code-Mixed STT/TTS
+            </span>
           </div>
-          <p className="text-[11px] text-slate-600 font-medium tracking-wide mt-0.5">
-            Sovereign Voice-First Legal Bridge · Powered by Gnani.ai
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            {SUPPORTED_LANGUAGES.map(l => {
+              const active = language === l.code;
+              return (
+                <button
+                  key={l.code}
+                  onClick={() => onLanguageChange(l.code)}
+                  className={[
+                    'py-1.5 px-3 rounded-full text-xs font-bold transition-all text-center flex items-center gap-1',
+                    active
+                      ? 'bg-[#1D3557] text-white shadow-sm ring-2 ring-[#1D3557]/20'
+                      : 'bg-white border border-[#1D3557]/20 text-[#1D3557] hover:border-[#1D3557]/50 hover:bg-[#1D3557]/5',
+                  ].join(' ')}
+                >
+                  <span>{l.native}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Welcoming Greeting */}
+        <div className="pt-2">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1D3557] tracking-tight">
+            {strings.greeting}
+          </h2>
+          <p className="text-sm text-[#1D3557]/70 mt-1.5 leading-relaxed font-medium">
+            {strings.greetingSub}
           </p>
         </div>
 
-        {/* API badges */}
-        <div className="ml-auto hidden sm:flex items-center gap-2">
-          <ApiPill color="indigo" label="Prisma STT v3.0 · Code-Mixed" />
-          <ApiPill color="emerald" label="Timbre TTS v2.5" />
+        {/* Core Action Cards */}
+        <div className="space-y-3.5 pt-1">
+          {/* Card 1: File Complaint */}
+          <div
+            onClick={() => onNavigate('grievance')}
+            className="bg-white rounded-2xl p-5 shadow-sm border border-[#1D3557]/15 flex items-center justify-between gap-4 cursor-pointer hover:shadow-md hover:border-[#1D3557]/40 transition-all group"
+          >
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-12 h-12 rounded-xl bg-[#EAF2F8] text-[#1D3557] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <Mic className="w-6 h-6 text-[#1D3557]" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-lg font-bold text-[#1D3557] leading-snug">
+                  {strings.card1Title}
+                </h3>
+                <p className="text-xs text-[#1D3557]/65 mt-0.5 leading-normal">
+                  {strings.card1Sub}
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-[#1D3557]/40 group-hover:text-[#1D3557] group-hover:translate-x-0.5 transition-all shrink-0" />
+          </div>
+
+          {/* Card 2: Understand Legal Notice */}
+          <div
+            onClick={() => onNavigate('simplifier')}
+            className="bg-white rounded-2xl p-5 shadow-sm border border-[#1D3557]/15 flex items-center justify-between gap-4 cursor-pointer hover:shadow-md hover:border-[#1D3557]/40 transition-all group"
+          >
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-12 h-12 rounded-xl bg-[#EAF2F8] text-[#1D3557] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <FileText className="w-6 h-6 text-[#1D3557]" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-lg font-bold text-[#1D3557] leading-snug">
+                  {strings.card2Title}
+                </h3>
+                <p className="text-xs text-[#1D3557]/65 mt-0.5 leading-normal">
+                  {strings.card2Sub}
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-[#1D3557]/40 group-hover:text-[#1D3557] group-hover:translate-x-0.5 transition-all shrink-0" />
+          </div>
+        </div>
+
+        {/* Emergency Banner (1930 Hotline) */}
+        <div className="bg-[#FEF9E7] border border-[#F6E05E] rounded-2xl p-4 flex items-start gap-3 text-[#1D3557] shadow-sm">
+          <div className="w-9 h-9 rounded-xl bg-[#FDE68A] text-[#B45309] flex items-center justify-center shrink-0 mt-0.5">
+            <Phone className="w-4 h-4 text-[#B45309]" />
+          </div>
+          <div className="flex-1 text-xs">
+            <p className="font-bold text-[#92400E] text-sm">
+              {strings.emergencyTitle}
+            </p>
+            <p className="text-[#92400E]/80 mt-0.5 font-medium leading-relaxed">
+              {strings.emergencySub}
+            </p>
+          </div>
+          <a
+            href="tel:1930"
+            className="px-3 py-1.5 rounded-xl bg-[#92400E] text-white font-bold text-xs shrink-0 hover:bg-[#78350F] shadow transition-all"
+          >
+            Call 1930
+          </a>
+        </div>
+
+      </div>
+
+      {/* Footer Disclaimer */}
+      <div className="pt-8 pb-4 text-center">
+        <div className="flex items-center justify-center gap-1.5 text-[11px] text-[#1D3557]/60 font-medium">
+          <Lock className="w-3.5 h-3.5 text-[#1D3557]/60" />
+          <p className="max-w-md leading-relaxed">
+            {strings.footerNote}
+          </p>
         </div>
       </div>
-    </header>
-  );
-}
-
-function ApiPill({ color, label }) {
-  const cls =
-    color === 'indigo'
-      ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
-      : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
-  return (
-    <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold tracking-wider ${cls}`}>
-      {label}
-    </span>
-  );
-}
-
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// TAB SWITCHER  —  floating pill
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function TabSwitcher({ active, onChange }) {
-  const tabs = [
-    { id: 'grievance',  icon: Mic,      label: 'File Grievance',    sub: 'Voice → PDF'     },
-    { id: 'simplifier', icon: BookOpen, label: 'Understand Notice', sub: 'Legal Simplifier' },
-  ];
-  return (
-    <div className="flex gap-1 p-1 bg-slate-900/60 backdrop-blur border border-slate-800/60 rounded-2xl">
-      {tabs.map(t => {
-        const Icon = t.icon;
-        const isActive = active === t.id;
-        return (
-          <button
-            key={t.id}
-            onClick={() => onChange(t.id)}
-            className={[
-              'flex-1 flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl',
-              'text-sm font-semibold transition-all duration-200',
-              isActive
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-                : 'text-slate-500 hover:text-slate-200 hover:bg-slate-800/50',
-            ].join(' ')}
-          >
-            <Icon className="w-4 h-4 shrink-0" />
-            <span className="hidden sm:block">{t.label}</span>
-            <span className="sm:hidden">{t.sub}</span>
-            {isActive && (
-              <span className="hidden sm:block text-indigo-200/70 text-[11px] font-normal">
-                · {t.sub}
-              </span>
-            )}
-          </button>
-        );
-      })}
     </div>
   );
 }
 
-
 // ═══════════════════════════════════════════════════════════════════════════════
-// GRIEVANCE FLOW  —  Conversational Intake (multi-turn chat + live form)
+// 2. GRIEVANCE FLOW (Voice Intake + Stepped Progress + Draft Review)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/** Mandatory fields with display metadata for the live form preview */
-const INTAKE_FIELDS = [
-  { key: 'complainant_name', label: 'Complainant Name',   icon: User        },
-  { key: 'phone_number',     label: 'Phone Number',       icon: Phone       },
-  { key: 'amount_lost',      label: 'Amount Lost',        icon: IndianRupee },
-  { key: 'bank_name',        label: 'Bank Name',          icon: Building2   },
-  { key: 'transaction_mode', label: 'Transaction Mode',   icon: CreditCard  },
-  { key: 'incident_date',    label: 'Incident Date',      icon: Calendar    },
-  { key: 'incident_type',    label: 'Crime Category',     icon: AlertCircle },
-  { key: 'address',          label: 'Location / Town',    icon: MapPin      },
-  { key: 'description',      label: 'Description',        icon: FileText    },
-];
-
-const GREETINGS = {
-  'kn-IN': 'ನಮಸ್ಕಾರ! ನಾನು ನ್ಯಾಯಸೇತು ಕಾನೂನು ಸಹಾಯಕ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ದೂರನ್ನು ವಿವರಿಸಿ, ಅದನ್ನು ದಾಖಲಿಸಲು ನಾನು ನಿಮಗೆ ಹಂತ-ಹಂತವಾಗಿ ಸಹಾಯ ಮಾಡುತ್ತೇನೆ.',
-  'hi-IN': 'नमस्ते! मैं न्यायसेतु कानूनी सहायक हूँ। कृपया अपनी शिकायत बताएं, मैं इसे दर्ज करने में आपकी मदद करूँगा।',
-  'en-IN': 'Namaste! I am NyaySetu Legal Assistant. Please describe your complaint and I will guide you step-by-step to file it.',
-  'ta-IN': 'வணக்கம்! நான் நியாயசேது சட்ட உதவியாளர். உங்கள் புகாரை விவரிக்கவும், அதை பதிவு செய்ய நான் உங்களுக்கு படிப்படியாக உதவுவேன்.',
-  'te-IN': 'నమస్కారం! నేను న్యాయసేతు న్యాయ సహాయకుడిని. దయచేసి మీ ఫిర్యాదును వివరించండి, దాన్ని నమోదు చేయడంలో నేను మీకు దశలవారీగా సహాయం చేస్తాను.',
-  'mr-IN': 'नमस्कार! मी न्यायसेतू कायदेशीर सहाय्यक आहे. कृपया आपली तक्रार सांगा, मी ती नोंदवण्यासाठी आपल्याला मदत करेन.',
-  'bn-IN': 'নমস্কার! আমি ন্যায়সেতু আইনি সহকারী। অনুগ্রহ করে আপনার অভিযোগটি বলুন, আমি এটি নথিভুক্ত করতে আপনাকে সাহায্য করব।',
-  'gu-IN': 'નમસ્તે! હું ન્યાયસેતુ કાનૂની સહાયક છું. કૃપા કરીને તમારી ફરિયાદ જણાવો, હું તેને નોંધવામાં તમારી મદદ કરીશ.',
-  'ml-IN': 'നമസ്കാരം! ഞാൻ ന്യായസೇതു നിയമ സഹായിയാണ്. ദയവായി നിങ്ങളുടെ പരാതി വ്യക്തമാക്കുക, ഞാൻ സഹായിക്കാം.',
-  'pa-IN': 'ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਨਿਆਏਸੇਤੂ ਕਾਨੂੰਨੀ ਸਹਾਇਕ ਹਾਂ। ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੀ ਸ਼ਿਕਾਇਤ ਦੱਸੋ, ਮੈਂ ਇਸਨੂੰ ਦਰਜ ਕਰਨ ਵਿੱਚ ਤੁਹਾਡੀ ਮਦਦ ਕਰਾਂਗਾ।',
-};
-
-function GrievanceFlow({ toast }) {
-  // ── Stable session ID for entire component lifetime ────────────────────────
+function GrievanceScreen({ language, onLanguageChange, onBack, toast }) {
+  const strings = getStrings(language);
   const sessionId = useRef(`session_${Date.now()}_${Math.random().toString(36).slice(2)}`);
 
-  // ── Chat state ─────────────────────────────────────────────────────────────
-  const [language,         setLanguage]         = useState('kn-IN');
-  const [messages,         setMessages]         = useState([{ role: 'assistant', text: GREETINGS['kn-IN'] }]);
-  const [speechMultiplier, setSpeechMultiplier] = useState(1.0); // Standard natural baseline speed (1.0x = 1.6x raw rate)
-  const [entities,         setEntities]         = useState({});
-  const [missingFields,    setMissingFields]    = useState(INTAKE_FIELDS.map(f => f.key));
-  const [isComplete,       setIsComplete]       = useState(false);
-  const [inputText,        setInputText]        = useState('');
-  const [chatLoading,      setChatLoading]      = useState(false);
+  // Screen substate: 'intake' | 'draft'
+  const [subscreen, setSubscreen] = useState('intake');
 
-  // ── Voice recording state ──────────────────────────────────────────────────
-  const [recording,  setRecording]  = useState(false);
-  const [recPaused,  setRecPaused]  = useState(false);
-  const [recTimer,   setRecTimer]   = useState(0);
+  // Intake State
+  const [messages, setMessages] = useState([
+    { role: 'assistant', text: GREETINGS[language] || GREETINGS['kn-IN'] }
+  ]);
+  const [lastUserTranscript, setLastUserTranscript] = useState('');
+  const [speechMultiplier, setSpeechMultiplier] = useState(1.0);
+  const [entities, setEntities] = useState({});
+  const [missingFields, setMissingFields] = useState(INTAKE_FIELDS.map(f => f.key));
+  const [isComplete, setIsComplete] = useState(false);
+  const [inputText, setInputText] = useState('');
+  const [showTypeInput, setShowTypeInput] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
 
-  // ── Audio playback controls (ChatGPT-style pause / resume / interrupt) ──────
+  // Audio Playback Controls
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isPaused,   setIsPaused]   = useState(false);
-  const fallbackAudioRef = useRef(null);
-  const recPausedRef     = useRef(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [lastAssistantAudioB64, setLastAssistantAudioB64] = useState(null);
 
-  // ── PDF state ──────────────────────────────────────────────────────────────
+  // Voice recording state
+  const [recording, setRecording] = useState(false);
+  const [recPaused, setRecPaused] = useState(false);
+  const [recTimer, setRecTimer] = useState(0);
+
+  // PDF & Editing State
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [editingKey, setEditingKey] = useState(null);
+  const [editValue, setEditValue] = useState('');
+  const [showFullNarrative, setShowFullNarrative] = useState(false);
 
-  // ── Refs ───────────────────────────────────────────────────────────────────
-  const chatBottomRef   = useRef(null);
-  const audioCtxRef     = useRef(null);
-  const streamRef       = useRef(null);
-  const processorRef    = useRef(null);
-  const pcmChunksRef    = useRef([]);
-  const timerRef        = useRef(null);
-  const inputRef        = useRef(null);
+  // Refs
+  const audioCtxRef = useRef(null);
+  const streamRef = useRef(null);
+  const processorRef = useRef(null);
+  const pcmChunksRef = useRef([]);
+  const timerRef = useRef(null);
   const activeSourceRef = useRef(null);
-  const playerCtxRef    = useRef(null);
+  const playerCtxRef = useRef(null);
+  const fallbackAudioRef = useRef(null);
+  const recPausedRef = useRef(false);
 
-  // ── Auto-scroll chat on new messages ──────────────────────────────────────
-  useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // ── Recording timer (pauses when user pauses mic) ──────────────────────────
+  // Recording timer
   useEffect(() => {
     if (recording && !recPaused) {
       timerRef.current = setInterval(() => setRecTimer(n => n + 1), 1000);
@@ -418,10 +1046,7 @@ function GrievanceFlow({ toast }) {
     return () => clearInterval(timerRef.current);
   }, [recording, recPaused]);
 
-  const fmtTime = s =>
-    `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-
-  // ── Stop/Interrupt Audio Playback (ChatGPT-style interruption) ─────────────
+  // Audio Stop
   const stopAudio = useCallback(() => {
     try {
       if (activeSourceRef.current) {
@@ -440,7 +1065,6 @@ function GrievanceFlow({ toast }) {
     setIsPaused(false);
   }, []);
 
-  // ── Pause Audio Playback ──────────────────────────────────────────────────
   const pauseAudio = useCallback(async () => {
     try {
       if (playerCtxRef.current && playerCtxRef.current.state === 'running') {
@@ -453,7 +1077,6 @@ function GrievanceFlow({ toast }) {
     } catch (_) {}
   }, []);
 
-  // ── Resume Audio Playback ─────────────────────────────────────────────────
   const resumeAudio = useCallback(async () => {
     try {
       if (playerCtxRef.current && playerCtxRef.current.state === 'suspended') {
@@ -466,17 +1089,17 @@ function GrievanceFlow({ toast }) {
     } catch (_) {}
   }, []);
 
-  // ── Web Audio API Engine with 1.6x Baseline Multiplier & Pause/Resume ──────
+  // Web Audio API Playback with baseline speed
   const playAudioB64 = useCallback(async (b64, customMultiplier) => {
+    if (!b64) return;
     const mult = customMultiplier ?? speechMultiplier;
-    const effectiveRate = mult * BASE_SPEED; // 1.0x baseline = 1.6x effective playback
+    const effectiveRate = mult * BASE_SPEED;
+    stopAudio();
+
     try {
       const raw = atob(b64);
       const arr = new Uint8Array(raw.length);
       for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
-
-      // Stop any audio that is currently playing
-      stopAudio();
 
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!playerCtxRef.current || playerCtxRef.current.state === 'closed') {
@@ -487,11 +1110,10 @@ function GrievanceFlow({ toast }) {
         await ctx.resume();
       }
 
-      // decodeAudioData with array buffer copy
       const audioBuffer = await ctx.decodeAudioData(arr.buffer.slice(0));
       const source = ctx.createBufferSource();
       source.buffer = audioBuffer;
-      source.playbackRate.value = effectiveRate; // Web Audio API AudioParam — 100% deterministic & unresettable!
+      source.playbackRate.value = effectiveRate;
       source.connect(ctx.destination);
       source.onended = () => {
         if (activeSourceRef.current === source) {
@@ -505,7 +1127,6 @@ function GrievanceFlow({ toast }) {
       setIsSpeaking(true);
       setIsPaused(false);
     } catch (err) {
-      // Robust Fallback: HTML5 Audio with multiple event listeners enforcing playbackRate
       try {
         const raw = atob(b64);
         const arr = new Uint8Array(raw.length);
@@ -530,11 +1151,11 @@ function GrievanceFlow({ toast }) {
     }
   }, [speechMultiplier, stopAudio]);
 
-  // ── Send a text message to the chat-intake backend ─────────────────────────
+  // Send message to backend
   const sendMessage = useCallback(async (text) => {
     if (!text.trim() || chatLoading) return;
-    // Silence assistant speech immediately when user submits an answer
     stopAudio();
+    setLastUserTranscript(text);
     setMessages(prev => [...prev, { role: 'user', text }]);
     setInputText('');
     setChatLoading(true);
@@ -552,30 +1173,35 @@ function GrievanceFlow({ toast }) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 
-      setEntities(data.entities      ?? {});
+      setEntities(data.entities ?? {});
       setMissingFields(data.missing_fields ?? []);
-      setIsComplete(data.is_complete  ?? false);
+      setIsComplete(data.is_complete ?? false);
+
       setMessages(prev => [...prev, {
         role:     'assistant',
         text:     data.assistant_response,
         audioB64: data.audio_base64,
         source:   data.tts_source,
       }]);
-      if (data.audio_base64) playAudioB64(data.audio_base64);
+
+      if (data.audio_base64) {
+        setLastAssistantAudioB64(data.audio_base64);
+        playAudioB64(data.audio_base64);
+      }
+
+      if (data.is_complete) {
+        toast('All details collected! Reviewing your draft…', 'success');
+        setSubscreen('draft');
+      }
     } catch (err) {
       toast(`Chat error: ${err.message}`, 'error');
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        text: 'Sorry, I could not process your message. Please try again.',
-      }]);
     } finally {
       setChatLoading(false);
     }
   }, [chatLoading, language, playAudioB64, stopAudio, toast]);
 
-  // ── Voice: start recording (with instant interruption of AI speech) ───────
+  // Recording handlers
   const startRecording = useCallback(async () => {
-    // Instantly interrupt / silence assistant speech so user can answer immediately
     stopAudio();
     pcmChunksRef.current = [];
     recPausedRef.current = false;
@@ -598,30 +1224,15 @@ function GrievanceFlow({ toast }) {
       proc.connect(ctx.destination);
       setRecording(true);
       setRecTimer(0);
-      toast('Recording… speak your answer or use pause', 'info');
     } catch (err) {
       toast('Microphone access denied: ' + (err.message || 'grant permission'), 'error');
     }
   }, [stopAudio, toast]);
 
-  // ── Recording Pause / Resume ──────────────────────────────────────────────
-  const pauseRecording = useCallback(() => {
-    recPausedRef.current = true;
-    setRecPaused(true);
-    toast('Recording paused', 'info');
-  }, [toast]);
-
-  const resumeRecording = useCallback(() => {
-    recPausedRef.current = false;
-    setRecPaused(false);
-    toast('Recording resumed', 'info');
-  }, [toast]);
-
-  // ── Voice: stop recording, transcribe, then send transcript to chat ────────
   const stopRecording = useCallback(async () => {
     if (!recording) return;
     setRecording(false);
-    toast('Transcribing with Gnani Prisma STT…', 'info');
+    toast('Processing speech with Gnani Prisma STT…', 'info');
 
     try {
       processorRef.current?.disconnect();
@@ -652,10 +1263,9 @@ function GrievanceFlow({ toast }) {
       setChatLoading(false);
 
       if (!transcript.trim()) {
-        toast('No speech detected — please try again.', 'error');
+        toast('No speech detected — please tap and speak again.', 'error');
         return;
       }
-      toast('Voice captured — sending to assistant…', 'success');
       await sendMessage(transcript);
     } catch (err) {
       setChatLoading(false);
@@ -663,12 +1273,8 @@ function GrievanceFlow({ toast }) {
     }
   }, [recording, language, sendMessage, toast]);
 
-  // ── PDF download ──────────────────────────────────────────────────────────
+  // PDF Generation
   const downloadPdf = async () => {
-    if (!isComplete) {
-      toast('Please answer all questions before downloading the PDF.', 'error');
-      return;
-    }
     setPdfLoading(true);
     try {
       const res = await fetch('/api/generate-pdf', {
@@ -692,373 +1298,451 @@ function GrievanceFlow({ toast }) {
     }
   };
 
-  // ── Language & Speed Handlers ──────────────────────────────────────────────
-  const handleLanguageSelect = (code) => {
-    setLanguage(code);
-    if (messages.length <= 1) {
-      setMessages([{ role: 'assistant', text: GREETINGS[code] || GREETINGS['kn-IN'] }]);
-    }
-  };
-
-  const handleSpeedChange = (newMultiplier) => {
-    setSpeechMultiplier(newMultiplier);
-    const effectiveRate = newMultiplier * BASE_SPEED;
-    if (activeSourceRef.current) {
-      try {
-        activeSourceRef.current.playbackRate.value = effectiveRate;
-      } catch (_) {}
-    }
-    toast(`Voice speed set to ${newMultiplier}x`, 'info');
-  };
-
-  // ── Reset session ─────────────────────────────────────────────────────────
+  // Reset
   const resetSession = async () => {
     stopAudio();
     try {
       await fetch(`/api/chat-intake/${sessionId.current}`, { method: 'DELETE' });
     } catch (_) {}
-    // Generate a new session ID
     sessionId.current = `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     setMessages([{ role: 'assistant', text: GREETINGS[language] || GREETINGS['kn-IN'] }]);
     setEntities({});
     setMissingFields(INTAKE_FIELDS.map(f => f.key));
     setIsComplete(false);
     setInputText('');
+    setLastUserTranscript('');
+    setLastAssistantAudioB64(null);
+    setSubscreen('intake');
     toast('Session reset — ready for a new complaint.', 'info');
   };
 
-  const filledCount = INTAKE_FIELDS.length - missingFields.length;
-  const progressPct = Math.round((filledCount / INTAKE_FIELDS.length) * 100);
+  // Inline Field Edit
+  const saveInlineEdit = (key) => {
+    setEntities(prev => ({ ...prev, [key]: editValue }));
+    setEditingKey(null);
+    setEditValue('');
+    toast('Field updated ✓', 'success');
+  };
 
-  // ═════════════════════════════════════════════════════════════════════════
+  // WhatsApp Share
+  const shareOnWhatsApp = () => {
+    const text = `*NyaySetu Cybercrime Complaint Summary*\n\n` +
+      `*Name:* ${entities.complainant_name || '—'}\n` +
+      `*Mobile:* ${entities.phone_number || '—'}\n` +
+      `*Amount Lost:* ${entities.amount_lost || '—'}\n` +
+      `*Bank:* ${entities.bank_name || '—'}\n` +
+      `*Date:* ${entities.incident_date || '—'}\n` +
+      `*Incident:* ${entities.incident_type || '—'}\n\n` +
+      `*Description:*\n${entities.description || '—'}\n\n` +
+      `Generated securely via NyaySetu. Submit at cybercrime.gov.in or helpline 1930.`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const filledCount = Math.min(8, INTAKE_FIELDS.filter(f => f.key !== 'description' && entities[f.key]).length);
+  const currentStep = Math.min(8, Math.max(1, filledCount + 1));
+  const latestAssistantMsg = messages.filter(m => m.role === 'assistant').slice(-1)[0]?.text;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // RENDER DRAFT REVIEW SCREEN (Page 3)
+  // ─────────────────────────────────────────────────────────────────────────────
+  if (subscreen === 'draft') {
+    return (
+      <div className="max-w-xl mx-auto px-5 py-6 space-y-5 animate-float-up">
+
+        {/* Top Header */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setSubscreen('intake')}
+            className="flex items-center gap-1.5 text-sm font-bold text-[#1D3557] hover:opacity-75 transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>{strings.back}</span>
+          </button>
+          <button
+            onClick={resetSession}
+            className="text-xs font-semibold text-[#1D3557]/60 hover:text-rose-600 transition-colors"
+          >
+            {strings.startOver}
+          </button>
+        </div>
+
+        <div>
+          <h2 className="text-2xl font-extrabold text-[#1D3557]">
+            {strings.draftReady}
+          </h2>
+          <p className="text-xs text-[#1D3557]/70 mt-1 leading-relaxed">
+            {strings.draftSub}
+          </p>
+        </div>
+
+        {/* The Formal Complaint Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-[#1D3557]/15 overflow-hidden draft-watermark">
+          <div className="h-1 bg-gradient-to-r from-[#FF9933] via-white to-[#046A38]" />
+
+          <div className="p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#1D3557]/10 pb-3">
+              <span className="text-[11px] font-black tracking-widest text-[#1D3557]/70 uppercase">
+                {strings.cyberDraftBadge}
+              </span>
+              <span className="text-[10px] font-black tracking-wider text-[#E63946] bg-[#FEE2E2] px-2.5 py-0.5 rounded-full border border-[#E63946]/30 uppercase">
+                {strings.draftTag}
+              </span>
+            </div>
+
+            <div className="divide-y divide-[#1D3557]/10 text-xs sm:text-sm">
+              {[
+                { key: 'complainant_name', label: strings.fields.complainant_name },
+                { key: 'phone_number',     label: strings.fields.phone_number },
+                { key: 'address',          label: strings.fields.address },
+                { key: 'amount_lost',      label: strings.fields.amount_lost },
+                { key: 'bank_name',        label: strings.fields.bank_name },
+                { key: 'incident_date',    label: strings.fields.incident_date },
+              ].map(({ key, label }) => {
+                const val = entities[key];
+                const isEditing = editingKey === key;
+
+                return (
+                  <div key={key} className="py-2.5 flex items-center justify-between gap-3">
+                    <span className="text-[#1D3557]/60 font-medium shrink-0 w-28">
+                      {label}
+                    </span>
+                    {isEditing ? (
+                      <div className="flex items-center gap-1.5 flex-1 justify-end">
+                        <input
+                          type="text"
+                          value={editValue}
+                          onChange={e => setEditValue(e.target.value)}
+                          className="px-2 py-1 text-xs border border-[#1D3557]/30 rounded-lg text-[#1D3557] focus:outline-none focus:ring-1 focus:ring-[#1D3557]"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => saveInlineEdit(key)}
+                          className="p-1 bg-[#1D3557] text-white rounded-md hover:bg-[#2A4A73]"
+                        >
+                          <Check className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => setEditingKey(null)}
+                          className="p-1 bg-slate-100 text-[#1D3557] rounded-md hover:bg-slate-200"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 justify-end text-right min-w-0 flex-1">
+                        <span className="font-bold text-[#1D3557] truncate">
+                          {val || '—'}
+                        </span>
+                        <button
+                          onClick={() => { setEditingKey(key); setEditValue(val || ''); }}
+                          className="p-1 text-[#1D3557]/40 hover:text-[#1D3557] rounded transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-2 border-t border-[#1D3557]/10 space-y-1.5">
+              <span className="text-xs font-bold text-[#1D3557]/70 block">
+                {strings.narrativeTitle}
+              </span>
+              <p className={`text-xs text-[#1D3557] leading-relaxed whitespace-pre-line ${
+                showFullNarrative ? '' : 'line-clamp-3'
+              }`}>
+                {entities.description || 'ವಂಚನೆಯ ಪೂರ್ಣ ವಿವರಗಳನ್ನು ದಾಖಲಿಸಲಾಗಿದೆ.'}
+              </p>
+              {entities.description && entities.description.length > 120 && (
+                <button
+                  onClick={() => setShowFullNarrative(prev => !prev)}
+                  className="text-xs font-bold text-[#1D3557] underline hover:opacity-80"
+                >
+                  {showFullNarrative ? strings.hideFullText : strings.readFullText}
+                </button>
+              )}
+            </div>
+
+          </div>
+        </div>
+
+        {/* Legal Disclaimer Box */}
+        <div className="bg-[#FEF9E7] border border-[#F6E05E] rounded-2xl p-4 flex items-start gap-2.5 text-xs text-[#92400E]">
+          <AlertTriangle className="w-4 h-4 text-[#B45309] shrink-0 mt-0.5" />
+          <p className="leading-relaxed font-medium">
+            {strings.disclaimer}
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="space-y-2.5 pt-1">
+          <button
+            onClick={downloadPdf}
+            disabled={pdfLoading}
+            className="w-full bg-[#1D3557] hover:bg-[#2A4A73] text-white py-3.5 px-6 rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+          >
+            {pdfLoading ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Generating PDF…</>
+            ) : (
+              <><Printer className="w-4 h-4" /> {strings.printPdf}</>
+            )}
+          </button>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={shareOnWhatsApp}
+              className="py-3 px-4 rounded-xl bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+            >
+              <Share2 className="w-3.5 h-3.5 text-emerald-700" />
+              <span>{strings.shareWa}</span>
+            </button>
+
+            <button
+              onClick={resetSession}
+              className="py-3 px-4 rounded-xl bg-white border border-[#1D3557]/20 text-[#1D3557] hover:border-[#1D3557]/40 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-[#1D3557]/70" />
+              <span>{strings.startOver}</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // RENDER INTAKE / VOICE RECORDING SCREEN (Page 2)
+  // ─────────────────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-4">
+    <div className="max-w-xl mx-auto px-5 py-6 flex flex-col justify-between min-h-screen">
+      <div className="space-y-4">
 
-      {/* Language + Speed + Reset row */}
-      <GlassCard>
-        <div className="flex flex-wrap items-center gap-3">
-          <FieldLabel icon={Globe} label="Language" />
-          <div className="flex flex-wrap gap-1.5 flex-1">
-            {LANGUAGES.map(lang => (
+        {/* Top Navigation & Step Indicator */}
+        <div className="flex items-center justify-between pt-1">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-sm font-bold text-[#1D3557] hover:opacity-75 transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>{strings.intakeTitle}</span>
+          </button>
+
+          <span className="text-xs font-black text-[#1D3557]/60 tracking-wider">
+            {currentStep} {strings.stepOf}
+          </span>
+        </div>
+
+        {/* Stepped Progress Bar (8 Segments) */}
+        <div className="flex items-center gap-1">
+          {[1,2,3,4,5,6,7,8].map(step => (
+            <div
+              key={step}
+              className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                step <= currentStep ? 'bg-[#1D3557]' : 'bg-[#1D3557]/15'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Language Selector Bar (All Gnani Languages with English Integration) */}
+        <div className="space-y-1.5 bg-white p-3 rounded-2xl border border-[#1D3557]/15 shadow-sm">
+          <div className="flex items-center justify-between px-0.5">
+            <p className="text-[10px] font-bold text-[#1D3557]/70 uppercase tracking-wider">
+              {strings.langLabel}:
+            </p>
+            <span className="text-[9px] font-bold text-[#1D3557]/50 bg-black/5 px-2 py-0.5 rounded-full">
+              Prisma STT Code-Mixed
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {SUPPORTED_LANGUAGES.map(l => (
               <button
-                key={lang.code}
-                onClick={() => handleLanguageSelect(lang.code)}
-                disabled={chatLoading || recording}
-                className={[
-                  'flex flex-col items-center px-2.5 py-1 rounded-xl text-xs font-semibold transition-all',
-                  'disabled:opacity-40 disabled:cursor-not-allowed',
-                  language === lang.code
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 ring-1 ring-indigo-400'
-                    : 'bg-slate-800/90 text-slate-300 hover:bg-slate-700/80 hover:text-white border border-slate-700/50',
-                ].join(' ')}
+                key={l.code}
+                onClick={() => {
+                  onLanguageChange(l.code);
+                  if (messages.length <= 1) {
+                    setMessages([{ role: 'assistant', text: GREETINGS[l.code] || GREETINGS['kn-IN'] }]);
+                  }
+                }}
+                className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${
+                  language === l.code
+                    ? 'bg-[#1D3557] text-white shadow-sm ring-1 ring-[#1D3557]'
+                    : 'bg-[#FDFBF7] border border-[#1D3557]/20 text-[#1D3557] hover:border-[#1D3557]/40'
+                }`}
               >
-                <span className="leading-tight">{lang.label}</span>
-                <span className={`text-[9px] font-medium leading-tight ${language === lang.code ? 'text-indigo-200' : 'text-slate-500'}`}>
-                  {lang.sub}
-                </span>
+                {l.native}
               </button>
             ))}
           </div>
-
-          {/* Voice Speed Dropdown — 1.0x Standard baseline (1.6x effective rate) in the center */}
-          <div className="flex items-center gap-2 bg-slate-800/80 px-2.5 py-1.5 rounded-xl border border-slate-700/60 shadow-inner">
-            <Volume2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-            <label htmlFor="voice-speed-select" className="text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">
-              Voice Speed:
-            </label>
-            <div className="relative">
-              <select
-                id="voice-speed-select"
-                value={speechMultiplier}
-                onChange={e => handleSpeedChange(parseFloat(e.target.value))}
-                className="bg-slate-900 text-slate-200 text-xs font-semibold px-2.5 py-1 pr-6 rounded-lg border border-slate-700/60 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 cursor-pointer appearance-none"
-              >
-                {SPEED_OPTIONS.map(opt => (
-                  <option key={opt.val} value={opt.val}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-slate-400">
-                <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={resetSession}
-            disabled={chatLoading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-rose-400 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 transition-all disabled:opacity-40"
-          >
-            <RefreshCw className="w-3 h-3" /> Reset
-          </button>
         </div>
-      </GlassCard>
 
-      {/* Split-pane layout: Chat + Live Form */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Primary Assistant Question Card */}
+        <Card className="p-4 bg-white border border-[#1D3557]/15">
+          <p className="text-sm sm:text-base font-bold text-[#1D3557] leading-relaxed">
+            {latestAssistantMsg || strings.intakePromptDefault}
+          </p>
+        </Card>
 
-        {/* ── LEFT: Conversational Chat ── */}
-        <GlassCard className="flex flex-col" style={{ minHeight: '520px' }}>
-          <FieldLabel icon={MessageSquare} label="NyaySetu Legal Assistant" />
-
-          {/* Chat messages */}
-          <div className="flex-1 overflow-y-auto mt-3 space-y-3 pr-1" style={{ maxHeight: '360px' }}>
-            {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={[
-                    'max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed',
-                    msg.role === 'user'
-                      ? 'bg-indigo-600 text-white rounded-br-sm'
-                      : 'bg-slate-800/80 border border-slate-700/40 text-slate-200 rounded-bl-sm',
-                  ].join(' ')}
-                >
-                  {msg.text}
-                  {msg.source === 'gnani_timbre_tts' && (
-                    <span className="ml-2 text-[9px] font-bold tracking-widest text-emerald-400 uppercase opacity-70">● TTS</span>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {/* Typing indicator */}
-            {chatLoading && (
-              <div className="flex justify-start">
-                <div className="bg-slate-800/80 border border-slate-700/40 rounded-2xl rounded-bl-sm px-4 py-2.5 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce" style={{ animationDelay: '0ms'   }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
-              </div>
-            )}
-
-            <div ref={chatBottomRef} />
+        {/* What We Heard (User Speech Preview) */}
+        {lastUserTranscript && (
+          <div className="bg-[#EAF2F8] border border-[#1D3557]/15 rounded-2xl p-4 space-y-1 animate-float-up">
+            <p className="text-xs sm:text-sm text-[#1D3557] font-medium leading-relaxed">
+              {lastUserTranscript}
+            </p>
+            <p className="text-[11px] text-[#1D3557]/60 font-semibold pt-1">
+              {strings.whatWeHeard}
+            </p>
           </div>
+        )}
 
-          {/* AI Voice Control Bar (ChatGPT Voice style Pause / Resume / Stop & Speak) */}
-          {isSpeaking && (
-            <div className="mt-2.5 px-3.5 py-2 rounded-xl bg-slate-800/90 border border-indigo-500/30 flex items-center justify-between gap-3 shadow-lg backdrop-blur-md">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="flex items-center gap-0.5">
-                  <span className={`w-1 h-3 rounded-full bg-indigo-400 ${isPaused ? '' : 'animate-bounce'}`} style={{ animationDelay: '0ms' }} />
-                  <span className={`w-1 h-4 rounded-full bg-indigo-400 ${isPaused ? '' : 'animate-bounce'}`} style={{ animationDelay: '150ms' }} />
-                  <span className={`w-1 h-2 rounded-full bg-indigo-400 ${isPaused ? '' : 'animate-bounce'}`} style={{ animationDelay: '300ms' }} />
-                </div>
-                <span className="text-xs font-semibold text-slate-200 truncate">
-                  {isPaused ? 'AI Voice Paused' : 'AI Speaking…'}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                {/* Pause / Resume Button */}
-                <button
-                  onClick={isPaused ? resumeAudio : pauseAudio}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow"
-                  title={isPaused ? 'Resume AI Voice' : 'Pause AI Voice'}
-                >
-                  {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-                  <span>{isPaused ? 'Resume' : 'Pause'}</span>
-                </button>
-
-                {/* Stop & Speak Button (Instant Interrupt) */}
-                <button
-                  onClick={() => { stopAudio(); startRecording(); }}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 transition-all shadow"
-                  title="Interrupt AI and talk right away"
-                >
-                  <Mic className="w-3.5 h-3.5" />
-                  <span>Stop &amp; Speak</span>
-                </button>
-
-                <button
-                  onClick={stopAudio}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/60 transition-all"
-                  title="Stop voice"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Voice waveform & Mic Pause/Resume controls when user is recording */}
-          {recording && (
-            <div className="mt-2.5 p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-lg">
-              <WaveformVisualizer active={!recPaused} />
-              <div className="flex items-center justify-between mt-2 px-1">
-                <p className="text-xs text-rose-400 font-mono tabular-nums">
-                  {recPaused ? '⏸️ Recording Paused' : '🔴 Recording'} ({fmtTime(recTimer)})
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={recPaused ? resumeRecording : pauseRecording}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-200 bg-slate-700 hover:bg-slate-600 border border-slate-600/50 transition-all shadow"
-                  >
-                    {recPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-                    <span>{recPaused ? 'Resume Mic' : 'Pause Mic'}</span>
-                  </button>
-                  <button
-                    onClick={stopRecording}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow"
-                  >
-                    <Send className="w-3 h-3" />
-                    <span>Send</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Input row */}
-          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-800/60">
-            {/* Mic button */}
-            <button
-              onClick={recording ? stopRecording : startRecording}
-              disabled={chatLoading && !recording}
-              className={[
-                'w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all',
-                recording
-                  ? 'bg-rose-600 hover:bg-rose-500 shadow-lg shadow-rose-500/30 ring-2 ring-rose-500/30 animate-pulse'
-                  : 'bg-slate-800 hover:bg-slate-700 border border-slate-700/50',
-                'disabled:opacity-40 disabled:cursor-not-allowed',
-              ].join(' ')}
-            >
-              {recording ? <MicOff className="w-4 h-4 text-white" /> : <Mic className="w-4 h-4 text-indigo-400" />}
-            </button>
-
-            {/* Text input */}
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputText}
-              onChange={e => setInputText(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(inputText); } }}
-              disabled={chatLoading || recording}
-              placeholder={recording ? 'Recording…' : 'Type your reply or use the mic…'}
-              className={[
-                'flex-1 bg-slate-800/60 border border-slate-700/40 rounded-xl',
-                'px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600',
-                'focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50',
-                'transition-all disabled:opacity-50',
-              ].join(' ')}
-            />
-
-            {/* Send button */}
-            <button
-              onClick={() => sendMessage(inputText)}
-              disabled={chatLoading || !inputText.trim() || recording}
-              className={[
-                'w-10 h-10 rounded-full flex items-center justify-center shrink-0',
-                'bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-500/20',
-                'transition-all disabled:opacity-40 disabled:cursor-not-allowed',
-              ].join(' ')}
-            >
-              {chatLoading
-                ? <Loader2 className="w-4 h-4 text-white animate-spin" />
-                : <Send className="w-4 h-4 text-white" />}
-            </button>
-          </div>
-        </GlassCard>
-
-        {/* ── RIGHT: Live Form Preview ── */}
-        <GlassCard className="flex flex-col" style={{ minHeight: '520px' }}>
-          <div className="flex items-center justify-between mb-3">
-            <FieldLabel icon={FileText} label="Live Form Preview" />
-            <span className={[
-              'text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full border',
-              isComplete
-                ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400'
-                : 'bg-amber-500/10 border-amber-500/25 text-amber-400',
-            ].join(' ')}>
-              {isComplete ? '✓ COMPLETE' : `${filledCount}/${INTAKE_FIELDS.length} FIELDS`}
+        {/* Details So Far Summary Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-[#1D3557]/15 p-4 space-y-3">
+          <div className="flex items-center justify-between border-b border-[#1D3557]/10 pb-2">
+            <span className="text-[11px] font-black tracking-widest text-[#1D3557]/70 uppercase">
+              {strings.detailsSoFar}
             </span>
+            {lastAssistantAudioB64 && (
+              <button
+                onClick={() => playAudioB64(lastAssistantAudioB64)}
+                className="flex items-center gap-1 text-[11px] font-bold text-[#1D3557] hover:underline"
+              >
+                <Volume2 className="w-3 h-3" />
+                <span>{strings.listenAgain}</span>
+              </button>
+            )}
           </div>
 
-          {/* Progress bar */}
-          <div className="w-full bg-slate-800 rounded-full h-1.5 mb-4 overflow-hidden">
-            <div
-              className="h-1.5 rounded-full bg-gradient-to-r from-indigo-600 to-emerald-500 transition-all duration-500"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-
-          {/* Field cards */}
-          <div className="flex-1 space-y-2 overflow-y-auto pr-1" style={{ maxHeight: '350px' }}>
-            {INTAKE_FIELDS.map(({ key, label, icon: Icon }) => {
-              const value   = entities[key];
-              const filled  = !!value;
+          <div className="divide-y divide-[#1D3557]/10 text-xs">
+            {[
+              { key: 'complainant_name', label: strings.fields.complainant_name },
+              { key: 'phone_number',     label: strings.fields.phone_number },
+              { key: 'amount_lost',      label: strings.fields.amount_lost },
+              { key: 'bank_name',        label: strings.fields.bank_name },
+              { key: 'transaction_mode', label: strings.fields.transaction_mode },
+              { key: 'incident_date',    label: strings.fields.incident_date },
+              { key: 'incident_type',    label: strings.fields.incident_type },
+              { key: 'address',          label: strings.fields.address },
+            ].map(({ key, label }) => {
+              const val = entities[key];
               return (
-                <div
-                  key={key}
-                  className={[
-                    'flex items-center gap-3 px-3.5 py-2.5 rounded-xl border transition-all duration-300',
-                    filled
-                      ? 'bg-emerald-950/30 border-emerald-700/30'
-                      : 'bg-slate-800/40 border-slate-700/30',
-                  ].join(' ')}
-                >
-                  <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${filled ? 'text-emerald-400' : 'text-slate-600'}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[9px] font-bold tracking-widest uppercase text-slate-600 mb-0.5">{label}</p>
-                    {filled
-                      ? <p className={`text-sm font-medium text-emerald-300 ${key === 'description' ? 'line-clamp-3 leading-snug whitespace-pre-line' : 'truncate'}`}>{value}</p>
-                      : <p className="text-sm text-slate-700 italic">Pending…</p>}
-                  </div>
-                  {filled && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
+                <div key={key} className="py-1.5 flex items-center justify-between">
+                  <span className="text-[#1D3557]/60 font-medium">{label}</span>
+                  <span className={`font-semibold ${val ? 'text-[#1D3557]' : 'text-[#1D3557]/30'}`}>
+                    {val || '—'}
+                  </span>
                 </div>
               );
             })}
           </div>
 
-          {/* Approve & Download button */}
-          <div className="mt-4 pt-3 border-t border-slate-800/60">
-            <button
-              onClick={downloadPdf}
-              disabled={!isComplete || pdfLoading}
-              className={[
-                'w-full flex items-center justify-center gap-2',
-                'py-3.5 px-6 rounded-xl font-bold text-sm text-white',
-                'transition-all duration-300',
-                isComplete
-                  ? 'bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40'
-                  : 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700/40',
-              ].join(' ')}
-            >
-              {pdfLoading
-                ? <><Loader2 className="w-5 h-5 animate-spin" /> Generating PDF…</>
-                : isComplete
-                  ? <><Download className="w-5 h-5" /> Approve &amp; Download PDF</>
-                  : <><Clock className="w-5 h-5" /> Waiting for all fields…</>}
-            </button>
-            {!isComplete && (
-              <p className="text-center text-[11px] text-slate-700 mt-2">
-                {missingFields.length} field{missingFields.length !== 1 ? 's' : ''} remaining
-              </p>
-            )}
+          {/* Quick jump to draft button if fields exist */}
+          {filledCount >= 3 && (
+            <div className="pt-2 border-t border-[#1D3557]/10 text-center">
+              <button
+                onClick={() => setSubscreen('draft')}
+                className="text-xs font-bold text-[#1D3557] underline hover:opacity-80"
+              >
+                View Draft Form ({filledCount}/8 details collected) →
+              </button>
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* Bottom Sticky Voice Controller Area */}
+      <div className="pt-6 pb-4 space-y-3">
+
+        {recording && (
+          <div className="bg-white rounded-2xl p-3 border border-[#E63946]/30 shadow-sm animate-record-ring">
+            <WaveformVisualizer active={!recPaused} />
+            <p className="text-center text-xs font-bold text-[#E63946] mt-1">
+              Recording audio ({recTimer}s)… tap stop to transcribe
+            </p>
           </div>
-        </GlassCard>
+        )}
+
+        {/* Big Navy Mic Button */}
+        <div className="flex flex-col items-center justify-center gap-2">
+          <button
+            onClick={recording ? stopRecording : startRecording}
+            disabled={chatLoading}
+            className={[
+              'w-16 h-16 rounded-full flex items-center justify-center text-white shadow-xl transition-all active:scale-95',
+              recording
+                ? 'bg-[#E63946] ring-4 ring-[#E63946]/30 animate-pulse'
+                : 'bg-[#1D3557] hover:bg-[#2A4A73]',
+              chatLoading ? 'opacity-50 cursor-not-allowed' : '',
+            ].join(' ')}
+          >
+            {chatLoading ? (
+              <Loader2 className="w-6 h-6 animate-spin text-white" />
+            ) : recording ? (
+              <Square className="w-6 h-6 fill-current text-white" />
+            ) : (
+              <Mic className="w-7 h-7 text-white" />
+            )}
+          </button>
+
+          <p className="text-base font-bold text-[#1D3557] mt-1">
+            {recording ? strings.listening : strings.tapToSpeak}
+          </p>
+
+          <div className="flex items-center gap-2 text-xs text-[#1D3557]/70 font-semibold">
+            <span>{strings.tapAndSpeak}</span>
+            <span>•</span>
+            <button
+              onClick={() => setShowTypeInput(prev => !prev)}
+              className="underline text-[#1D3557] hover:opacity-80 font-bold"
+            >
+              {strings.typeInstead}
+            </button>
+          </div>
+        </div>
+
+        {/* Text Input Drawer */}
+        {showTypeInput && (
+          <div className="flex items-center gap-2 pt-2 animate-float-up">
+            <input
+              type="text"
+              value={inputText}
+              onChange={e => setInputText(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage(inputText);
+                }
+              }}
+              placeholder="Type your reply here…"
+              className="flex-1 bg-white border border-[#1D3557]/20 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#1D3557] placeholder:text-[#1D3557]/40 focus:outline-none focus:ring-2 focus:ring-[#1D3557]/30"
+            />
+            <button
+              onClick={() => sendMessage(inputText)}
+              disabled={!inputText.trim() || chatLoading}
+              className="w-10 h-10 rounded-xl bg-[#1D3557] hover:bg-[#2A4A73] text-white flex items-center justify-center shrink-0 disabled:opacity-40"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
       </div>
     </div>
   );
 }
 
-
 // ═══════════════════════════════════════════════════════════════════════════════
-// SIMPLIFIER FLOW  —  Google Stitch Dual-Column Document Simplifier & Assistant
+// 3. LEGAL SIMPLIFIER SCREEN ("ನೋಟಿಸ್ ಅರ್ಥ ಮಾಡಿಕೊಳ್ಳಿ")
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function SimplifierFlow({ toast }) {
-  // ── Language & Speed State ────────────────────────────────────────────────
-  const [language,         setLanguage]         = useState('kn-IN');
-  const [speechMultiplier, setSpeechMultiplier] = useState(1.0); // 1.0x baseline = 1.6x effective rate
+function SimplifierScreen({ language, onLanguageChange, onBack, toast }) {
+  const strings = getStrings(language);
 
-  // ── Upload & Document Processing State ────────────────────────────────────
+  // Upload & Document Processing State
   const [selectedFile,       setSelectedFile]       = useState(null);
   const [isDragging,         setIsDragging]         = useState(false);
   const [uploading,          setUploading]          = useState(false);
@@ -1071,43 +1755,38 @@ function SimplifierFlow({ toast }) {
     action_steps:        true,
   });
 
-  // ── Document Context Chat State ───────────────────────────────────────────
-  const [chatMessages,     setChatMessages]     = useState([]);
-  const [chatInput,        setChatInput]        = useState('');
-  const [chatLoading,      setChatLoading]      = useState(false);
+  // Chat State
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
 
-  // ── Voice Recording for Chat ──────────────────────────────────────────────
-  const [recording,        setRecording]        = useState(false);
-  const [recTimer,         setRecTimer]         = useState(0);
+  // Audio Playback Controls
+  const [playingAudioId, setPlayingAudioId] = useState(null);
+  const [isAudioPaused, setIsAudioPaused] = useState(false);
+  const [speechMultiplier, setSpeechMultiplier] = useState(1.0);
+  const playerCtxRef = useRef(null);
+  const activeSourceRef = useRef(null);
+  const fallbackAudioRef = useRef(null);
 
-  // ── Audio Playback Controls (Pause / Resume / Stop) ───────────────────────
-  const [playingAudioId,   setPlayingAudioId]   = useState(null); // 'summary' or message id
-  const [isAudioPaused,    setIsAudioPaused]    = useState(false);
-  const playerCtxRef       = useRef(null);
-  const activeSourceRef    = useRef(null);
-  const fallbackAudioRef   = useRef(null);
+  // Recording State
+  const [recording, setRecording] = useState(false);
+  const [recTimer, setRecTimer] = useState(0);
+  const audioCtxRef = useRef(null);
+  const streamRef = useRef(null);
+  const processorRef = useRef(null);
+  const pcmChunksRef = useRef([]);
+  const fileInputRef = useRef(null);
+  const chatBottomRef = useRef(null);
+  const timerIntervalRef = useRef(null);
 
-  // ── Recording Refs ────────────────────────────────────────────────────────
-  const audioCtxRef        = useRef(null);
-  const streamRef          = useRef(null);
-  const processorRef       = useRef(null);
-  const pcmChunksRef       = useRef([]);
-  const fileInputRef       = useRef(null);
-  const chatBottomRef      = useRef(null);
-  const timerIntervalRef   = useRef(null);
-
-  // Auto-scroll chat to bottom
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, chatLoading]);
 
-  // Recording timer
   useEffect(() => {
     if (recording) {
       setRecTimer(0);
-      timerIntervalRef.current = setInterval(() => {
-        setRecTimer(prev => prev + 1);
-      }, 1000);
+      timerIntervalRef.current = setInterval(() => setRecTimer(n => n + 1), 1000);
     } else {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     }
@@ -1116,7 +1795,6 @@ function SimplifierFlow({ toast }) {
     };
   }, [recording]);
 
-  // ── Stop Any Playing Audio ────────────────────────────────────────────────
   const stopAudio = useCallback(() => {
     try {
       if (activeSourceRef.current) {
@@ -1135,7 +1813,6 @@ function SimplifierFlow({ toast }) {
     setIsAudioPaused(false);
   }, []);
 
-  // ── Pause Audio Playback ──────────────────────────────────────────────────
   const pauseAudio = useCallback(async () => {
     try {
       if (playerCtxRef.current && playerCtxRef.current.state === 'running') {
@@ -1148,7 +1825,6 @@ function SimplifierFlow({ toast }) {
     } catch (_) {}
   }, []);
 
-  // ── Resume Audio Playback ─────────────────────────────────────────────────
   const resumeAudio = useCallback(async () => {
     try {
       if (playerCtxRef.current && playerCtxRef.current.state === 'suspended') {
@@ -1161,7 +1837,6 @@ function SimplifierFlow({ toast }) {
     } catch (_) {}
   }, []);
 
-  // ── Play Audio via Web Audio API ──────────────────────────────────────────
   const playAudioB64 = useCallback(async (b64, audioId) => {
     if (!b64) return;
     const effectiveRate = speechMultiplier * BASE_SPEED;
@@ -1224,31 +1899,19 @@ function SimplifierFlow({ toast }) {
 
   const toggleAudio = (b64, audioId) => {
     if (playingAudioId === audioId) {
-      if (isAudioPaused) {
-        resumeAudio();
-      } else {
-        pauseAudio();
-      }
+      if (isAudioPaused) resumeAudio();
+      else pauseAudio();
     } else {
       playAudioB64(b64, audioId);
     }
   };
 
-  // ── Document Upload & Extraction ──────────────────────────────────────────
   const handleUploadFile = async (file, targetLang) => {
     if (!file) return;
-
-    // Validate extension
     const ext = (file.name.split('.').pop() || '').toLowerCase();
     const validExts = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'txt'];
     if (!validExts.includes(ext)) {
-      toast('Unsupported file format. Please upload a PDF, PNG, or JPG document.', 'error');
-      return;
-    }
-
-    // Validate size (15 MB)
-    if (file.size > 15 * 1024 * 1024) {
-      toast('File size exceeds maximum limit of 15 MB.', 'error');
+      toast('Unsupported file format. Please upload a PDF, PNG, or JPG.', 'error');
       return;
     }
 
@@ -1257,7 +1920,7 @@ function SimplifierFlow({ toast }) {
     setUploading(true);
     setDocResult(null);
     setChatMessages([]);
-    toast(`Analyzing ${file.name} with PyMuPDF & OCR…`, 'info');
+    toast(`Analyzing ${file.name} with PyMuPDF & RapidOCR…`, 'info');
 
     const form = new FormData();
     form.append('file', file);
@@ -1275,31 +1938,19 @@ function SimplifierFlow({ toast }) {
       const data = await res.json();
       setDocResult(data);
 
-      // Set initial welcoming assistant message in chat
-      const welcomeText = language.startsWith('kn')
-        ? `ನಾನು ನಿಮ್ಮ ಕಾನೂನು ನೋಟಿಸ್ (${file.name}) ಅನ್ನು ವಿಶ್ಲೇಷಿಸಿದ್ದೇನೆ. ನೋಟಿಸ್‌ನ ಉದ್ದೇಶ, ಗಡುವು ದಿನಾಂಕ, ಅಥವಾ ಶಿಫಾರಸು ಮಾಡಲಾದ ಮುಂದಿನ ಕ್ರಮಗಳ ಬಗ್ಗೆ ನೀವು ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳನ್ನು ಕೇಳಬಹುದು.`
-        : language.startsWith('hi')
-        ? `मैंने आपका कानूनी नोटिस (${file.name}) विश्लेषित कर लिया है। आप नोटिस के कारण, समय-सीमा, या कानूनी सलाह के बारे में कोई भी प्रश्न पूछ सकते हैं।`
-        : `I have analyzed your legal notice (${file.name}). You can ask me any contextual questions about the allegations, deadlines, penalties, or recommended next steps.`;
-
       setChatMessages([{
         id: 'msg_welcome',
         role: 'assistant',
-        text: welcomeText,
+        text: language.startsWith('kn')
+          ? `ನಾನು ನಿಮ್ಮ ಕಾನೂನು ನೋಟಿಸ್ (${file.name}) ಅನ್ನು ವಿಶ್ಲೇಷಿಸಿದ್ದೇನೆ. ನೀವು ಯಾವುದೇ ಪ್ರಶ್ನೆ ಕೇಳಬಹುದು.`
+          : `I have analyzed your legal notice (${file.name}). You can ask any question about it.`,
         audio_base64: null,
       }]);
 
-      // Automatically play voice summary if available
       if (data.audio_base64) {
         playAudioB64(data.audio_base64, 'summary');
       }
-
-      toast(
-        data.tts_source === 'gnani_timbre_tts'
-          ? 'Notice simplified with Gnani Timbre TTS ✓'
-          : 'Notice analyzed & structured successfully ✓',
-        'success'
-      );
+      toast('Notice analyzed & structured successfully ✓', 'success');
     } catch (err) {
       toast(`Upload error: ${err.message}`, 'error');
     } finally {
@@ -1307,38 +1958,13 @@ function SimplifierFlow({ toast }) {
     }
   };
 
-  // ── Drag & Drop Handlers ──────────────────────────────────────────────────
-  const onDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-  const onDragLeave = () => {
-    setIsDragging(false);
-  };
-  const onDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleUploadFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  // ── Load Sample Notice (IT Act Section 66C) ───────────────────────────────
-  const handleLoadSample = () => {
-    const sampleBlob = new Blob([SAMPLE_LEGAL], { type: 'text/plain' });
-    const sampleFile = new File([sampleBlob], 'IT_Act_Section_66C_Notice.txt', { type: 'text/plain' });
-    handleUploadFile(sampleFile);
-  };
-
-  // ── Send Contextual Chat Message ──────────────────────────────────────────
   const sendChatMessage = async (queryText) => {
     const textToSend = (queryText || chatInput).trim();
     if (!textToSend || chatLoading) return;
 
     stopAudio();
     const userMsgId = `user_${Date.now()}`;
-    const userMsg = { id: userMsgId, role: 'user', text: textToSend };
-    setChatMessages(prev => [...prev, userMsg]);
+    setChatMessages(prev => [...prev, { id: userMsgId, role: 'user', text: textToSend }]);
     setChatInput('');
     setChatLoading(true);
 
@@ -1354,42 +1980,29 @@ function SimplifierFlow({ toast }) {
           history:       chatMessages.slice(-6).map(m => ({ role: m.role, content: m.text })),
         }),
       });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || `HTTP ${res.status}`);
-      }
-
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+
       const asstMsgId = `asst_${Date.now()}`;
-      const asstMsg = {
+      setChatMessages(prev => [...prev, {
         id:           asstMsgId,
         role:         'assistant',
         text:         data.response_text,
         audio_base64: data.audio_base64,
         tts_source:   data.tts_source,
-      };
+      }]);
 
-      setChatMessages(prev => [...prev, asstMsg]);
-
-      // Automatically play response audio
       if (data.audio_base64) {
         playAudioB64(data.audio_base64, asstMsgId);
       }
     } catch (err) {
       toast(`Chat error: ${err.message}`, 'error');
-      setChatMessages(prev => [...prev, {
-        id:   `err_${Date.now()}`,
-        role: 'assistant',
-        text: 'Sorry, I encountered an error searching the document. Please try again.',
-      }]);
     } finally {
       setChatLoading(false);
     }
   };
 
-  // ── Voice Input Recording (Gnani Prisma STT) ──────────────────────────────
-  const startRecording = async () => {
+  const startVoiceQuestion = async () => {
     stopAudio();
     pcmChunksRef.current = [];
     try {
@@ -1407,25 +2020,22 @@ function SimplifierFlow({ toast }) {
       src.connect(proc);
       proc.connect(ctx.destination);
       setRecording(true);
-      toast('Recording… speak your question about the notice', 'info');
+      toast('Recording… ask your question about the notice', 'info');
     } catch (err) {
-      toast('Microphone access denied: ' + (err.message || 'grant permission'), 'error');
+      toast('Microphone error: ' + err.message, 'error');
     }
   };
 
-  const stopRecording = async () => {
+  const stopVoiceQuestion = async () => {
     if (!recording) return;
     setRecording(false);
-    toast('Transcribing with Gnani Prisma STT…', 'info');
+    toast('Transcribing voice question…', 'info');
 
     try {
       processorRef.current?.disconnect();
-      if (processorRef.current) processorRef.current.onaudioprocess = null;
       streamRef.current?.getTracks().forEach(t => t.stop());
       const sr = audioCtxRef.current?.sampleRate || 16000;
-      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-        audioCtxRef.current.close();
-      }
+      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') audioCtxRef.current.close();
 
       let total = 0;
       for (const c of pcmChunksRef.current) total += c.length;
@@ -1446,418 +2056,182 @@ function SimplifierFlow({ toast }) {
       const transcript = sttData.transcript || '';
       setChatLoading(false);
 
-      if (!transcript.trim()) {
-        toast('No speech detected — please try again.', 'error');
-        return;
+      if (transcript.trim()) {
+        await sendChatMessage(transcript);
       }
-      toast('Transcribed question captured — querying document…', 'success');
-      await sendChatMessage(transcript);
     } catch (err) {
       setChatLoading(false);
-      toast(`Voice query error: ${err.message}`, 'error');
+      toast(`Voice error: ${err.message}`, 'error');
     }
   };
 
-  // ── Language Select ───────────────────────────────────────────────────────
-  const handleLanguageSelect = (code) => {
-    setLanguage(code);
-    if (selectedFile) {
-      handleUploadFile(selectedFile, code);
-    }
-  };
-
-  // ── Reset All ─────────────────────────────────────────────────────────────
-  const clearAll = () => {
-    stopAudio();
-    setSelectedFile(null);
-    setDocResult(null);
-    setChatMessages([]);
-    setChatInput('');
-    setShowExtractedText(false);
-    toast('Document session cleared.', 'info');
-  };
-
-  // Category Configuration
   const categoryConfigs = [
-    {
-      key: 'key_allegations',
-      icon: AlertCircle,
-      accent: 'border-amber-500/30 bg-amber-500/5 text-amber-400',
-      badge: 'bg-amber-500/10 text-amber-400 border-amber-500/25',
-      defaultTitle: 'Key Allegations / Notice Intent',
-    },
-    {
-      key: 'deadlines_dates',
-      icon: Clock,
-      accent: 'border-rose-500/30 bg-rose-500/5 text-rose-400',
-      badge: 'bg-rose-500/10 text-rose-400 border-rose-500/25',
-      defaultTitle: 'Deadlines & Important Dates',
-    },
-    {
-      key: 'financial_penalties',
-      icon: Scale,
-      accent: 'border-purple-500/30 bg-purple-500/5 text-purple-400',
-      badge: 'bg-purple-500/10 text-purple-400 border-purple-500/25',
-      defaultTitle: 'Financial Demands & Penalties',
-    },
-    {
-      key: 'action_steps',
-      icon: Shield,
-      accent: 'border-emerald-500/30 bg-emerald-500/5 text-emerald-400',
-      badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25',
-      defaultTitle: 'Recommended Action Steps',
-    },
+    { key: 'key_allegations',     icon: AlertCircle, defaultTitle: 'Key Allegations / Notice Intent' },
+    { key: 'deadlines_dates',     icon: Clock,       defaultTitle: 'Deadlines & Important Dates' },
+    { key: 'financial_penalties', icon: Scale,       defaultTitle: 'Financial Demands & Penalties' },
+    { key: 'action_steps',        icon: Shield,      defaultTitle: 'Recommended Action Steps' },
   ];
 
-  const toggleCategory = (key) => {
-    setExpandedCategories(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  // Quick suggestion chips
-  const suggestions = [
-    { label: 'Why was this sent?',  query: 'Why was this notice sent to me?' },
-    { label: 'Response deadline?', query: 'What is the deadline to respond to this notice?' },
-    { label: 'Action to take?',    query: 'What legal action should I take right now?' },
-    { label: 'Fines & penalties?', query: 'Are there any penalties, fines, or jail terms mentioned?' },
-  ];
-
-  // ═════════════════════════════════════════════════════════════════════════
   return (
-    <div className="space-y-4">
+    <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
 
-      {/* ── Top Control Bar: Language, Audio Speed & Reset ── */}
-      <GlassCard>
-        <div className="flex flex-wrap items-center gap-3">
-          <FieldLabel icon={Globe} label="Language" />
-          <div className="flex flex-wrap gap-1.5 flex-1">
-            {LANGUAGES.map(lang => (
+      {/* Top Bar: Back & All Gnani Supported Languages with English integration */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-sm font-bold text-[#1D3557] hover:opacity-75 transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>{strings.card2Title}</span>
+          </button>
+
+          <span className="text-[10px] font-bold text-[#1D3557]/60 bg-black/5 px-2.5 py-1 rounded-full">
+            Prisma STT &amp; Timbre TTS Supported
+          </span>
+        </div>
+
+        {/* All Supported Languages Pill Bar */}
+        <div className="space-y-1.5 bg-white p-3 rounded-2xl border border-[#1D3557]/15 shadow-sm">
+          <div className="flex items-center justify-between px-0.5">
+            <p className="text-[10px] font-bold text-[#1D3557]/70 uppercase tracking-wider">
+              Select Language (Code-Mixed with English):
+            </p>
+            <span className="text-[9px] font-bold text-[#1D3557]/50">
+              11 Dialects Supported
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {SUPPORTED_LANGUAGES.map(l => (
               <button
-                key={lang.code}
-                onClick={() => handleLanguageSelect(lang.code)}
-                disabled={uploading || chatLoading || recording}
-                className={[
-                  'flex flex-col items-center px-2.5 py-1 rounded-xl text-xs font-semibold transition-all',
-                  'disabled:opacity-40 disabled:cursor-not-allowed',
-                  language === lang.code
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 ring-1 ring-indigo-400'
-                    : 'bg-slate-800/90 text-slate-300 hover:bg-slate-700/80 hover:text-white border border-slate-700/50',
-                ].join(' ')}
+                key={l.code}
+                onClick={() => {
+                  onLanguageChange(l.code);
+                  if (selectedFile) {
+                    handleUploadFile(selectedFile, l.code);
+                  }
+                }}
+                className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${
+                  language === l.code
+                    ? 'bg-[#1D3557] text-white shadow-sm ring-1 ring-[#1D3557]'
+                    : 'bg-[#FDFBF7] border border-[#1D3557]/20 text-[#1D3557] hover:border-[#1D3557]/40'
+                }`}
               >
-                <span className="leading-tight">{lang.label}</span>
-                <span className={`text-[9px] font-medium leading-tight ${language === lang.code ? 'text-indigo-200' : 'text-slate-500'}`}>
-                  {lang.sub}
-                </span>
+                {l.native}
               </button>
             ))}
           </div>
-
-          {/* Voice Speed Dropdown — 1.0x baseline = 1.6x raw rate */}
-          <div className="flex items-center gap-2 bg-slate-800/80 px-2.5 py-1.5 rounded-xl border border-slate-700/60 shadow-inner">
-            <Volume2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-            <label htmlFor="simplifier-voice-speed" className="text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">
-              Voice Speed:
-            </label>
-            <div className="relative">
-              <select
-                id="simplifier-voice-speed"
-                value={speechMultiplier}
-                onChange={e => setSpeechMultiplier(parseFloat(e.target.value))}
-                className="bg-slate-900 text-slate-200 text-xs font-semibold px-2.5 py-1 pr-6 rounded-lg border border-slate-700/60 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 cursor-pointer appearance-none"
-              >
-                {SPEED_OPTIONS.map(opt => (
-                  <option key={opt.val} value={opt.val}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-slate-400">
-                <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          {(selectedFile || docResult) && (
-            <button
-              onClick={clearAll}
-              disabled={uploading || chatLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-rose-400 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 transition-all disabled:opacity-40"
-            >
-              <RefreshCw className="w-3 h-3" /> Clear
-            </button>
-          )}
         </div>
-      </GlassCard>
+      </div>
 
-      {/* ── Dual-Column Google Stitch Layout ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      {/* Dual Column Layout: Upload & Breakdown (Left) vs Chat (Right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            LEFT COLUMN (7 cols): Document Upload, Preview & Categorized Breakdown
-           ═══════════════════════════════════════════════════════════════════ */}
+        {/* LEFT COLUMN: Upload & Categorized Breakdown */}
         <div className="lg:col-span-7 space-y-4">
 
-          {/* 1. Drag-and-Drop Upload Container */}
-          <GlassCard>
-            <FieldLabel icon={UploadCloud} label="Upload Legal Notice / Document" />
-
-            {/* Hidden native file input */}
+          {/* Upload Dropzone */}
+          <Card className="border-2 border-dashed border-[#1D3557]/20 hover:border-[#1D3557]/40 bg-white text-center p-6">
             <input
-              type="file"
               ref={fileInputRef}
-              onChange={e => {
-                if (e.target.files && e.target.files.length > 0) {
-                  handleUploadFile(e.target.files[0]);
-                }
-              }}
+              type="file"
               accept=".pdf,.png,.jpg,.jpeg,.webp,.txt"
               className="hidden"
+              onChange={e => {
+                if (e.target.files?.[0]) handleUploadFile(e.target.files[0]);
+              }}
             />
-
-            {/* Drag & Drop Zone */}
-            <div
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={[
-                'mt-3 p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center text-center',
-                isDragging
-                  ? 'border-indigo-400 bg-indigo-500/10 scale-[1.01]'
-                  : 'border-slate-700/70 hover:border-indigo-500/50 bg-slate-800/30 hover:bg-slate-800/50',
-              ].join(' ')}
-            >
-              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-3">
-                <UploadCloud className="w-6 h-6 text-indigo-400" />
+            <div className="flex flex-col items-center justify-center gap-2">
+              <div className="w-12 h-12 rounded-xl bg-[#EAF2F8] text-[#1D3557] flex items-center justify-center">
+                <UploadCloud className="w-6 h-6 text-[#1D3557]" />
               </div>
-              <p className="text-sm font-bold text-slate-200">
-                {selectedFile ? selectedFile.name : 'Drag & drop legal notice (PDF, PNG, JPG)'}
+              <h4 className="text-sm font-bold text-[#1D3557]">
+                Upload legal notice (PDF, JPG, PNG)
+              </h4>
+              <p className="text-xs text-[#1D3557]/60">
+                RapidOCR extracts regional text and plain-language summaries automatically
               </p>
-              <p className="text-xs text-slate-500 mt-1">
-                {selectedFile
-                  ? `${(selectedFile.size / 1024).toFixed(1)} KB · Click or drop to replace`
-                  : 'or click to browse from device (Max 15MB)'}
-              </p>
-              <div className="flex items-center gap-2 mt-3">
-                <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700/60 text-[10px] font-semibold text-slate-400">PDF</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700/60 text-[10px] font-semibold text-slate-400">JPG</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700/60 text-[10px] font-semibold text-slate-400">PNG</span>
-              </div>
-            </div>
-
-            {/* Instant Sample Loader Button */}
-            <div className="mt-3 flex items-center justify-between">
               <button
                 type="button"
-                onClick={handleLoadSample}
+                onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition-colors disabled:opacity-40"
+                className="mt-2 px-4 py-2 bg-[#1D3557] hover:bg-[#2A4A73] text-white rounded-xl text-xs font-bold transition-all disabled:opacity-40"
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                Load Sample Notice — IT Act Section 66C
+                {uploading ? 'Analyzing document…' : 'Choose File'}
               </button>
+            </div>
+          </Card>
 
-              {selectedFile && !uploading && (
+          {/* Audio Summary Card */}
+          {docResult?.audio_base64 && !uploading && (
+            <Card className="p-4 bg-white border border-[#1D3557]/15 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
                 <button
-                  type="button"
-                  onClick={() => handleUploadFile(selectedFile)}
-                  className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 font-semibold transition-colors"
+                  onClick={() => toggleAudio(docResult.audio_base64, 'summary')}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 ${
+                    playingAudioId === 'summary' && !isAudioPaused ? 'bg-[#1D3557]' : 'bg-[#1D3557]/80'
+                  }`}
                 >
-                  <RefreshCw className="w-3 h-3" />
-                  Re-analyze
+                  {playingAudioId === 'summary' && !isAudioPaused ? (
+                    <Pause className="w-4 h-4" />
+                  ) : (
+                    <Play className="w-4 h-4 ml-0.5" />
+                  )}
+                </button>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-[#1D3557] truncate">
+                    {playingAudioId === 'summary'
+                      ? isAudioPaused ? 'Summary Audio Paused' : 'Playing Voice Summary…'
+                      : 'Listen to Plain-Language Summary'}
+                  </p>
+                  <p className="text-[10px] text-[#1D3557]/60">
+                    Gnani Timbre TTS · Voice: Nalini
+                  </p>
+                </div>
+              </div>
+              {playingAudioId === 'summary' && (
+                <button
+                  onClick={stopAudio}
+                  className="p-1.5 text-xs text-[#1D3557]/60 hover:text-rose-600"
+                >
+                  <Square className="w-3.5 h-3.5 fill-current" />
                 </button>
               )}
-            </div>
-          </GlassCard>
-
-          {/* 2. Loading Skeleton while OCR / parsing is active */}
-          {uploading && (
-            <GlassCard className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Loader2 className="w-5 h-5 text-indigo-400 animate-spin shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold text-slate-200">
-                    Extracting & Structuring Legal Document…
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    PyMuPDF digital extraction / OCR engine & Gnani Timbre TTS voice synthesis
-                  </p>
-                </div>
-              </div>
-              <SkeletonLine h="h-4" w="w-3/4" />
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <SkeletonLine h="h-20" />
-                <SkeletonLine h="h-20" />
-                <SkeletonLine h="h-20" />
-                <SkeletonLine h="h-20" />
-              </div>
-            </GlassCard>
+            </Card>
           )}
 
-          {/* 3. Document Overview Card (Preview & Metadata) */}
-          {docResult && !uploading && (
-            <GlassCard className="space-y-3">
-              <div className="flex items-center justify-between">
-                <FieldLabel icon={FileCheck} label="Document Overview & Source" />
-                <SourceBadge source={docResult.tts_source} tts />
-              </div>
-
-              <div className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div className="flex items-center gap-2 min-w-0">
-                  <FileText className="w-4 h-4 text-indigo-400 shrink-0" />
-                  <span className="font-semibold text-slate-200 truncate max-w-[200px] sm:max-w-[300px]">
-                    {docResult.filename}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-400 uppercase">
-                    {docResult.file_type || 'DOC'}
-                  </span>
-                  <span className="text-slate-500 text-[11px]">
-                    {Math.round(docResult.file_size / 1024)} KB
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/25 text-[10px] text-indigo-400 font-semibold">
-                    {docResult.metadata?.method || 'PyMuPDF Engine'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Collapsible Extracted Text Viewer */}
-              <div className="pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowExtractedText(prev => !prev)}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors"
-                >
-                  <Eye className="w-3.5 h-3.5 text-indigo-400" />
-                  {showExtractedText ? 'Hide Extracted Full Text' : 'View Extracted Full Text'}
-                  {showExtractedText ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                </button>
-
-                {showExtractedText && (
-                  <div className="mt-2.5 p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 text-xs text-slate-300 font-mono leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap select-text">
-                    {docResult.extracted_text || 'No text extracted.'}
-                  </div>
-                )}
-              </div>
-            </GlassCard>
-          )}
-
-          {/* 4. Initial Voice Summary Player */}
-          {docResult?.audio_base64 && !uploading && (
-            <GlassCard className="flex items-center gap-4 border border-indigo-500/30 bg-gradient-to-r from-indigo-950/30 to-slate-900/60">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => toggleAudio(docResult.audio_base64, 'summary')}
-                  className={[
-                    'w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-lg transition-all',
-                    playingAudioId === 'summary'
-                      ? isAudioPaused
-                        ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/30 ring-2 ring-amber-400'
-                        : 'bg-amber-500 hover:bg-amber-400 shadow-amber-500/30'
-                      : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/30',
-                  ].join(' ')}
-                  title={
-                    playingAudioId === 'summary'
-                      ? isAudioPaused
-                        ? 'Resume Plain-Language Summary'
-                        : 'Pause Plain-Language Summary'
-                      : 'Listen to Plain-Language Summary'
-                  }
-                >
-                  {playingAudioId === 'summary' && !isAudioPaused
-                    ? <Pause className="w-5 h-5 text-white" />
-                    : <Play  className="w-5 h-5 text-white ml-0.5" />}
-                </button>
-                {playingAudioId === 'summary' && (
-                  <button
-                    type="button"
-                    onClick={stopAudio}
-                    className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700/60 shadow transition-all"
-                    title="Stop playback"
-                  >
-                    <Square className="w-3 h-3 fill-current" />
-                  </button>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  {playingAudioId === 'summary'
-                    ? isAudioPaused
-                      ? 'Plain-Language Summary Paused'
-                      : 'Playing Plain-Language Summary…'
-                    : 'Listen to Plain-Language Summary'}
-                  {playingAudioId === 'summary' && !isAudioPaused && (
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                  )}
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5 truncate">
-                  Gnani Timbre TTS · Voice: Nalini · {LANGUAGES.find(l => l.code === (docResult.language || language))?.label || 'Regional'}
-                </p>
-              </div>
-              <Volume2 className={`w-5 h-5 shrink-0 transition-colors ${
-                playingAudioId === 'summary' && !isAudioPaused ? 'text-amber-400 animate-pulse' : 'text-slate-600'
-              }`} />
-            </GlassCard>
-          )}
-
-          {/* 5. Categorized Legal Breakdown (4 Structured Categories) */}
+          {/* Categorized Breakdown */}
           {docResult?.structured_summary && !uploading && (
             <div className="space-y-3">
               {categoryConfigs.map(cat => {
                 const title = docResult.structured_summary.category_titles?.[cat.key] || cat.defaultTitle;
                 const points = docResult.structured_summary[cat.key] || [];
                 const isExpanded = expandedCategories[cat.key];
-
                 if (!points.length) return null;
 
-                const IconComponent = cat.icon;
+                const Icon = cat.icon;
 
                 return (
-                  <GlassCard key={cat.key} className="space-y-3 border border-slate-800">
+                  <Card key={cat.key} className="p-4 bg-white border border-[#1D3557]/15">
                     <button
-                      type="button"
-                      onClick={() => toggleCategory(cat.key)}
-                      className="w-full flex items-center justify-between text-left group"
+                      onClick={() => setExpandedCategories(prev => ({ ...prev, [cat.key]: !prev[cat.key] }))}
+                      className="w-full flex items-center justify-between text-left"
                     >
-                      <div className="flex items-center gap-2.5">
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center border ${cat.badge}`}>
-                          <IconComponent className="w-4 h-4" />
-                        </div>
-                        <h3 className="text-sm font-bold text-slate-200 group-hover:text-white transition-colors">
-                          {title}
-                        </h3>
-                      </div>
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${cat.badge}`}>
-                          {points.length} {points.length === 1 ? 'item' : 'items'}
-                        </span>
-                        {isExpanded ? (
-                          <ChevronUp className="w-4 h-4 text-slate-500 group-hover:text-slate-300" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 text-slate-500 group-hover:text-slate-300" />
-                        )}
+                        <Icon className="w-4 h-4 text-[#1D3557]" />
+                        <h4 className="text-xs font-bold text-[#1D3557]">{title}</h4>
                       </div>
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
 
                     {isExpanded && (
-                      <ul className="space-y-2 pt-1 border-t border-slate-800/60">
-                        {points.map((point, idx) => (
-                          <li
-                            key={idx}
-                            className="flex items-start gap-3 p-3 rounded-xl bg-slate-800/40 border border-slate-700/30 text-xs sm:text-sm text-slate-200 leading-relaxed"
-                          >
-                            <span className="text-indigo-400 font-bold text-xs mt-0.5 shrink-0">
-                              {idx + 1}.
-                            </span>
-                            <span>{point}</span>
-                          </li>
+                      <ul className="mt-3 space-y-1.5 text-xs text-[#1D3557]/80 list-disc list-inside">
+                        {points.map((pt, idx) => (
+                          <li key={idx} className="leading-relaxed">{pt}</li>
                         ))}
                       </ul>
                     )}
-                  </GlassCard>
+                  </Card>
                 );
               })}
             </div>
@@ -1865,161 +2239,86 @@ function SimplifierFlow({ toast }) {
 
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            RIGHT COLUMN (5 cols): Interactive Document Assistant Chat
-           ═══════════════════════════════════════════════════════════════════ */}
+        {/* RIGHT COLUMN: Document Contextual Assistant Chat */}
         <div className="lg:col-span-5 space-y-4">
-          <GlassCard className="flex flex-col" style={{ minHeight: '580px' }}>
-            
-            {/* Assistant Header with Context Pill */}
-            <div className="flex items-center justify-between border-b border-slate-800/70 pb-3">
-              <FieldLabel icon={MessageSquare} label="Document Assistant" />
-              {docResult ? (
-                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-bold text-emerald-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Context Active
-                </span>
-              ) : (
-                <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] font-semibold text-slate-500">
-                  Awaiting Upload
-                </span>
-              )}
+          <Card className="p-4 bg-white border border-[#1D3557]/15 flex flex-col h-[520px]">
+            <div className="border-b border-[#1D3557]/10 pb-2.5 flex items-center justify-between">
+              <span className="text-xs font-bold text-[#1D3557]">
+                Document Q&amp;A Assistant
+              </span>
+              <span className="text-[10px] font-semibold text-[#1D3557]/50">
+                Gnani STT &amp; TTS
+              </span>
             </div>
 
-            {/* Quick Suggestion Chips */}
-            {docResult && !uploading && (
-              <div className="py-2.5 border-b border-slate-800/50">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Suggested Questions:
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {suggestions.map((sug, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => sendChatMessage(sug.query)}
-                      disabled={chatLoading || recording}
-                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800/70 hover:bg-indigo-600/20 text-slate-300 hover:text-indigo-300 border border-slate-700/50 hover:border-indigo-500/40 transition-all disabled:opacity-40"
-                    >
-                      {sug.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Chat Messages Scroll Container */}
-            <div className="flex-1 overflow-y-auto my-3 space-y-3 pr-1" style={{ maxHeight: '380px' }}>
-              
-              {/* Empty state when no document is uploaded */}
-              {!docResult && !uploading && (
-                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-800/80 border border-slate-700/50 flex items-center justify-center mb-3">
-                    <HelpCircle className="w-6 h-6 text-slate-500" />
-                  </div>
-                  <h4 className="text-sm font-bold text-slate-300">Document Q&amp;A Assistant</h4>
-                  <p className="text-xs text-slate-500 max-w-xs mt-1.5 leading-relaxed">
-                    Upload or drag a legal notice on the left. The assistant will answer contextual questions strictly based on the extracted text.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleLoadSample}
-                    className="mt-4 px-3 py-1.5 rounded-xl bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/30 text-indigo-300 text-xs font-semibold flex items-center gap-1.5 transition-all"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Try with Sample Notice
-                  </button>
+            {/* Chat Messages */}
+            <div className="flex-1 overflow-y-auto py-3 space-y-2.5 text-xs">
+              {chatMessages.length === 0 && (
+                <div className="h-full flex flex-col items-center justify-center text-center text-[#1D3557]/50 p-4">
+                  <MessageSquare className="w-8 h-8 mb-2 text-[#1D3557]/30" />
+                  <p>Upload a document to ask contextual questions</p>
                 </div>
               )}
 
-              {/* Chat Thread */}
-              {chatMessages.map((msg) => (
+              {chatMessages.map(msg => (
                 <div
                   key={msg.id}
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
                     className={[
-                      'max-w-[88%] px-4 py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed',
+                      'max-w-[85%] px-3.5 py-2.5 rounded-2xl leading-relaxed',
                       msg.role === 'user'
-                        ? 'bg-indigo-600 text-white rounded-br-sm'
-                        : 'bg-slate-800/80 border border-slate-700/40 text-slate-200 rounded-bl-sm',
+                        ? 'bg-[#1D3557] text-white rounded-br-sm'
+                        : 'bg-[#F5F3EE] text-[#1D3557] rounded-bl-sm',
                     ].join(' ')}
                   >
-                    <div>{msg.text}</div>
-
-                    {/* Audio playback button for assistant response */}
-                    {msg.role === 'assistant' && msg.audio_base64 && (
-                      <div className="mt-2 pt-2 border-t border-slate-700/40 flex items-center justify-between gap-2">
+                    <p>{msg.text}</p>
+                    {msg.audio_base64 && (
+                      <div className="mt-2 pt-1.5 border-t border-[#1D3557]/10 flex items-center gap-1.5">
                         <button
-                          type="button"
                           onClick={() => toggleAudio(msg.audio_base64, msg.id)}
-                          className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+                          className="flex items-center gap-1 text-[10px] font-bold text-[#1D3557] hover:underline"
                         >
-                          {playingAudioId === msg.id ? (
-                            isAudioPaused ? (
-                              <>
-                                <Play className="w-3 h-3 text-amber-400 fill-current" />
-                                <span className="text-amber-400 font-bold">Resume voice</span>
-                              </>
-                            ) : (
-                              <>
-                                <Pause className="w-3 h-3 text-amber-400 fill-current" />
-                                <span className="text-amber-400 font-bold">Pause voice</span>
-                              </>
-                            )
+                          {playingAudioId === msg.id && !isAudioPaused ? (
+                            <><Pause className="w-2.5 h-2.5" /> Pause voice</>
                           ) : (
-                            <>
-                              <Play className="w-3 h-3" />
-                              <span>Listen in {LANGUAGES.find(l => l.code === language)?.label || 'Regional'}</span>
-                            </>
+                            <><Play className="w-2.5 h-2.5" /> Listen</>
                           )}
                         </button>
-                        {msg.tts_source === 'gnani_timbre_tts' && (
-                          <span className="text-[9px] font-bold text-emerald-400 tracking-wider uppercase">● TTS</span>
-                        )}
                       </div>
                     )}
                   </div>
                 </div>
               ))}
 
-              {/* Typing Skeleton Indicator */}
               {chatLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-slate-800/80 border border-slate-700/40 rounded-2xl rounded-bl-sm px-4 py-2.5 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <div className="bg-[#F5F3EE] px-3 py-2 rounded-2xl flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#1D3557] animate-bounce" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#1D3557] animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#1D3557] animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 </div>
               )}
-
               <div ref={chatBottomRef} />
             </div>
 
-            {/* Input Bar: Voice STT + Text Query */}
-            <div className="pt-3 border-t border-slate-800/70">
+            {/* Input Bar */}
+            <div className="pt-2 border-t border-[#1D3557]/10 space-y-2">
               <div className="flex items-center gap-2">
-
-                {/* Voice Input Trigger (Gnani Prisma STT) */}
                 <button
                   type="button"
-                  onClick={recording ? stopRecording : startRecording}
+                  onClick={recording ? stopVoiceQuestion : startVoiceQuestion}
                   disabled={uploading || chatLoading}
-                  className={[
-                    'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all',
-                    'disabled:opacity-40 disabled:cursor-not-allowed',
-                    recording
-                      ? 'bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-600/30'
-                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/60',
-                  ].join(' ')}
-                  title={recording ? `Recording (${recTimer}s) — click to send` : 'Ask question by voice (Prisma STT)'}
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-white ${
+                    recording ? 'bg-[#E63946] animate-pulse' : 'bg-[#1D3557]'
+                  }`}
+                  title="Ask by voice"
                 >
-                  {recording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-indigo-400" />}
+                  <Mic className="w-4 h-4" />
                 </button>
 
-                {/* Text Input */}
                 <input
                   type="text"
                   value={chatInput}
@@ -2030,168 +2329,47 @@ function SimplifierFlow({ toast }) {
                       sendChatMessage();
                     }
                   }}
-                  disabled={uploading || chatLoading || recording}
-                  placeholder={
-                    recording
-                      ? `Recording speech (${recTimer}s)… click mic to finish`
-                      : docResult
-                      ? 'Ask any question about this notice…'
-                      : 'Upload document first to ask questions…'
-                  }
-                  className={[
-                    'flex-1 bg-slate-800/80 border border-slate-700/50 rounded-xl',
-                    'px-3.5 py-2.5 text-xs sm:text-sm text-slate-100 placeholder:text-slate-500',
-                    'focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/50',
-                    'disabled:opacity-40 transition-all',
-                  ].join(' ')}
+                  placeholder={recording ? 'Recording voice question…' : 'Ask any question about this notice…'}
+                  className="flex-1 bg-white border border-[#1D3557]/20 rounded-xl px-3 py-2 text-xs text-[#1D3557] placeholder:text-[#1D3557]/40 focus:outline-none focus:ring-1 focus:ring-[#1D3557]"
                 />
 
-                {/* Send Button */}
                 <button
                   type="button"
                   onClick={() => sendChatMessage()}
-                  disabled={!chatInput.trim() || chatLoading || recording}
-                  className={[
-                    'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all',
-                    'bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/25',
-                    'disabled:opacity-30 disabled:cursor-not-allowed',
-                  ].join(' ')}
+                  disabled={!chatInput.trim() || chatLoading}
+                  className="w-9 h-9 rounded-xl bg-[#1D3557] hover:bg-[#2A4A73] text-white flex items-center justify-center shrink-0 disabled:opacity-40"
                 >
-                  {chatLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
+                  <Send className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              {/* Status footer for audio or recording */}
-              <div className="flex items-center justify-between mt-2.5 px-1 min-h-[30px]">
-                <div className="flex items-center gap-2 min-w-0">
-                  {recording ? (
-                    <div className="flex items-center gap-1.5 text-rose-400 font-semibold text-xs animate-pulse">
-                      <span className="w-2 h-2 rounded-full bg-rose-500" />
-                      <span>Recording voice question ({recTimer}s)…</span>
-                    </div>
-                  ) : playingAudioId ? (
-                    isAudioPaused ? (
-                      <div className="flex items-center gap-1.5 text-amber-300 font-semibold text-xs">
-                        <span className="w-2 h-2 rounded-full bg-amber-400" />
-                        <span>Voice response paused</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-indigo-300 font-semibold text-xs">
-                        <div className="flex items-center gap-0.5">
-                          <span className="w-1 h-2.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <span className="w-1 h-3.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="w-1 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '300ms' }} />
-                        </div>
-                        <span>Playing voice response…</span>
-                      </div>
-                    )
-                  ) : (
-                    <span className="text-[10px] text-slate-500">
-                      Powered by Gnani Prisma STT &amp; Timbre TTS
-                    </span>
-                  )}
-                </div>
-
-                {playingAudioId && (
-                  <div className="flex items-center gap-2 shrink-0">
-                    {/* Interactive Pause / Resume Button */}
+              {/* Status bar */}
+              {playingAudioId && (
+                <div className="flex items-center justify-between text-[11px] text-[#1D3557]/70">
+                  <span>{isAudioPaused ? '❚❚ Audio paused' : '● Playing voice response…'}</span>
+                  <div className="flex items-center gap-1.5">
                     <button
-                      type="button"
                       onClick={isAudioPaused ? resumeAudio : pauseAudio}
-                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold shadow-md transition-all ${
-                        isAudioPaused
-                          ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/25 ring-1 ring-amber-300'
-                          : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/25'
-                      }`}
-                      title={isAudioPaused ? 'Resume voice playback' : 'Pause voice playback'}
+                      className="font-bold underline text-[#1D3557]"
                     >
-                      {isAudioPaused ? (
-                        <>
-                          <Play className="w-3.5 h-3.5 fill-current" />
-                          <span>Resume</span>
-                        </>
-                      ) : (
-                        <>
-                          <Pause className="w-3.5 h-3.5 fill-current" />
-                          <span>Pause</span>
-                        </>
-                      )}
+                      {isAudioPaused ? 'Resume' : 'Pause'}
                     </button>
-
-                    {/* Secondary Stop Button to completely cancel */}
+                    <span>·</span>
                     <button
-                      type="button"
                       onClick={stopAudio}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/50 transition-all"
-                      title="Stop audio playback"
+                      className="font-bold underline text-[#1D3557]"
                     >
-                      <Square className="w-2.5 h-2.5 fill-current" />
-                      <span>Stop</span>
+                      Stop
                     </button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
-
-          </GlassCard>
+          </Card>
         </div>
 
       </div>
+
     </div>
-  );
-}
-
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// SHARED DESIGN COMPONENTS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-/** Glassmorphic card — the core container unit */
-function GlassCard({ children, className = '' }) {
-  return (
-    <div
-      className={[
-        'bg-slate-900/80 backdrop-blur-xl',
-        'border border-slate-800/80 rounded-2xl shadow-2xl',
-        'p-5',
-        className,
-      ].join(' ')}
-    >
-      {children}
-    </div>
-  );
-}
-
-/** Section field label with icon */
-function FieldLabel({ icon: Icon, label }) {
-  return (
-    <div className="flex items-center gap-2 text-[10px] font-black tracking-widest uppercase text-slate-500">
-      <Icon className="w-3.5 h-3.5 text-indigo-400" />
-      {label}
-    </div>
-  );
-}
-
-/** Source indicator badge */
-function SourceBadge({ source, tts = false }) {
-  if (!source) return null;
-  const isLive = tts
-    ? source === 'gnani_timbre_tts'
-    : source === 'gnani_prisma_stt';
-  return (
-    <span
-      className={[
-        'text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full border',
-        isLive
-          ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400'
-          : 'bg-amber-500/10  border-amber-500/25  text-amber-400',
-      ].join(' ')}
-    >
-      {isLive ? '● LIVE' : '◎ DEMO'}
-    </span>
   );
 }
