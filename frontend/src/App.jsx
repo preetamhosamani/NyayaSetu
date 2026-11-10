@@ -47,7 +47,7 @@ const SUPPORTED_LANGUAGES = [
   { code: 'as-IN', name: 'Assamese + English',  native: 'অসমীয়া + Eng',  sub: 'Assamese+Eng' },
 ];
 
-const BASE_SPEED = 1.6;
+const BASE_SPEED = 1.0;
 const SPEED_OPTIONS = [
   { val: 0.5,  label: '0.5x' },
   { val: 0.75, label: '0.75x' },
@@ -93,7 +93,7 @@ const UI_STRINGS = {
     readFullText: 'Read the full text',
     hideFullText: 'Hide full text',
     disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
-    printPdf: 'Print or save as PDF',
+    printPdf: 'Approve & Download PDF',
     shareWa: 'Share on WhatsApp',
     startOver: 'Start over',
     back: 'Back',
@@ -142,7 +142,7 @@ const UI_STRINGS = {
     readFullText: 'Read the full text',
     hideFullText: 'Hide full text',
     disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
-    printPdf: 'Print or save as PDF',
+    printPdf: 'Approve & Download PDF',
     shareWa: 'Share on WhatsApp',
     startOver: 'Start over',
     back: 'Back',
@@ -191,7 +191,7 @@ const UI_STRINGS = {
     readFullText: 'Read the full text',
     hideFullText: 'Hide full text',
     disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
-    printPdf: 'Print or save as PDF',
+    printPdf: 'Approve & Download PDF',
     shareWa: 'Share on WhatsApp',
     startOver: 'Start over',
     back: 'Back',
@@ -240,7 +240,7 @@ const UI_STRINGS = {
     readFullText: 'Read the full text',
     hideFullText: 'Hide full text',
     disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
-    printPdf: 'Print or save as PDF',
+    printPdf: 'Approve & Download PDF',
     shareWa: 'Share on WhatsApp',
     startOver: 'Start over',
     back: 'Back',
@@ -289,7 +289,7 @@ const UI_STRINGS = {
     readFullText: 'Read the full text',
     hideFullText: 'Hide full text',
     disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
-    printPdf: 'Print or save as PDF',
+    printPdf: 'Approve & Download PDF',
     shareWa: 'Share on WhatsApp',
     startOver: 'Start over',
     back: 'Back',
@@ -338,7 +338,7 @@ const UI_STRINGS = {
     readFullText: 'Read the full text',
     hideFullText: 'Hide full text',
     disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
-    printPdf: 'Print or save as PDF',
+    printPdf: 'Approve & Download PDF',
     shareWa: 'Share on WhatsApp',
     startOver: 'Start over',
     back: 'Back',
@@ -387,7 +387,7 @@ const UI_STRINGS = {
     readFullText: 'Read the full text',
     hideFullText: 'Hide full text',
     disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
-    printPdf: 'Print or save as PDF',
+    printPdf: 'Approve & Download PDF',
     shareWa: 'Share on WhatsApp',
     startOver: 'Start over',
     back: 'Back',
@@ -436,7 +436,7 @@ const UI_STRINGS = {
     readFullText: 'Read the full text',
     hideFullText: 'Hide full text',
     disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
-    printPdf: 'Print or save as PDF',
+    printPdf: 'Approve & Download PDF',
     shareWa: 'Share on WhatsApp',
     startOver: 'Start over',
     back: 'Back',
@@ -485,7 +485,7 @@ const UI_STRINGS = {
     readFullText: 'Read the full text',
     hideFullText: 'Hide full text',
     disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
-    printPdf: 'Print or save as PDF',
+    printPdf: 'Approve & Download PDF',
     shareWa: 'Share on WhatsApp',
     startOver: 'Start over',
     back: 'Back',
@@ -534,7 +534,7 @@ const UI_STRINGS = {
     readFullText: 'Read the full text',
     hideFullText: 'Hide full text',
     disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
-    printPdf: 'Print or save as PDF',
+    printPdf: 'Approve & Download PDF',
     shareWa: 'Share on WhatsApp',
     startOver: 'Start over',
     back: 'Back',
@@ -583,7 +583,7 @@ const UI_STRINGS = {
     readFullText: 'Read the full text',
     hideFullText: 'Hide full text',
     disclaimer: 'This is a draft, not a filed case. Submit it at cybercrime.gov.in or your nearest cyber police station.',
-    printPdf: 'Print or save as PDF',
+    printPdf: 'Approve & Download PDF',
     shareWa: 'Share on WhatsApp',
     startOver: 'Start over',
     back: 'Back',
@@ -1487,7 +1487,7 @@ function GrievanceScreen({ language, onLanguageChange, onBack, toast }) {
             {pdfLoading ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Generating PDF…</>
             ) : (
-              <><Printer className="w-4 h-4" /> {strings.printPdf}</>
+              <><Download className="w-4 h-4" /> {strings.printPdf} <span className="text-xs font-normal opacity-80">(Print / Save)</span></>
             )}
           </button>
 
