@@ -145,7 +145,7 @@ MULTILINGUAL_QUESTIONS = {
         "opening_amount":   "ಅಯ್ಯೋ, {amount} ಕಳ್ಕೊಂಡ್ರಾ? ಚಿಂತೆ ಮಾಡ್ಬೇಡಿ, ನಾನು ಸಹಾಯ ಮಾಡ್ತೀನಿ. ",
         "opening_name":     "ಹೌದಾ {name} ಅವರೇ. ",
         "ack":              "ಸರಿ, ",
-        "completed":        "ಸೂಪರ್! ಎಲ್ಲ ವಿವರ ಸಿಕ್ಕಿದೆ. ಪಕ್ಕದಲ್ಲಿರೋ ಫಾರ್ಮ್ ನೋಡಿ 'Approve & Download PDF' ಕ್ಲಿಕ್ ಮಾಡಿ.",
+        "completed":        "ಸೂಪರ್! ಎಲ್ಲ ವಿವರ ಸಿಕ್ಕಿದೆ. ಪಕ್ಕದಲ್ಲಿರೋ ಫಾರ್ಮ್ ನೋಡಿ 'ಅನುಮೋದಿಸಿ & ಸರ್ಕಾರಿ PDF ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ' (Approve & Download PDF) ಕ್ಲಿಕ್ ಮಾಡಿ.",
     },
     "hi": {
         "complainant_name": "अपना नाम बताइए।",
@@ -160,7 +160,7 @@ MULTILINGUAL_QUESTIONS = {
         "opening_amount":   "अरे, {amount} का नुकसान हो गया? चिंता मत कीजिए, मैं मदद करता हूँ। ",
         "opening_name":     "नमस्ते {name} जी। ",
         "ack":              "ठीक है, ",
-        "completed":        "बहुत बढ़िया! सारी जानकारी मिल गई है। फॉर्म देखकर 'Approve & Download PDF' पर क्लिक करें।",
+        "completed":        "बहुत बढ़िया! सारी जानकारी मिल गई है। फॉर्म देखकर 'स्वीकृत करें और सरकारी PDF डाउनलोड करें' (Approve & Download PDF) पर क्लिक करें।",
     },
     "en": {
         "complainant_name": "What is your name?",
@@ -175,7 +175,7 @@ MULTILINGUAL_QUESTIONS = {
         "opening_amount":   "Oh no, lost {amount}? Don't worry, let's sort this out. ",
         "opening_name":     "Hey {name}. ",
         "ack":              "Got it, ",
-        "completed":        "Awesome! I have collected all the details. Please review the form preview and click 'Approve & Download PDF'.",
+        "completed":        "Awesome! I have collected all the details. Please review the form preview and click 'Approve & Download PDF' (Government-Ready).",
     },
     "ta": {
         "complainant_name": "உங்க பெயர் சொல்லுங்க.",
@@ -190,7 +190,7 @@ MULTILINGUAL_QUESTIONS = {
         "opening_amount":   "அச்சச்சோ, {amount} இழந்துட்டீங்களா? கவலைப்படாதீங்க. ",
         "opening_name":     "வணக்கம் {name}. ",
         "ack":              "சரி, ",
-        "completed":        "அருமை! எல்லா தகவல்களும் கிடைத்தன. படிவத்தை பார்த்து 'Approve & Download PDF' கிளிக் செய்யவும்.",
+        "completed":        "அருமை! எல்லா தகவல்களும் கிடைத்தன. படிவத்தை பார்த்து 'அங்கீகரித்து அரசு PDF-ஐ பதிவிறக்கவும்' (Approve & Download PDF) கிளிக் செய்யவும்.",
     },
     "te": {
         "complainant_name": "మీ పేరు చెప్పండి.",
@@ -205,7 +205,7 @@ MULTILINGUAL_QUESTIONS = {
         "opening_amount":   "అయ్యో, {amount} పోయిందా? కంగారు పడకండి. ",
         "opening_name":     "నమస్కారం {name} గారు. ",
         "ack":              "సరే, ",
-        "completed":        "చాలా బాగుంది! మొత్తం సమాచారం వచ్చింది. ఫారమ్ చూసి 'Approve & Download PDF' పై క్లిక్ చేయండి.",
+        "completed":        "చాలా బాగుంది! మొత్తం సమాచారం వచ్చింది. ఫారమ్ చూసి 'ఆమోదించి అధికారిక PDF డౌన్‌లోడ్ చేయండి' (Approve & Download PDF) పై క్లిక్ చేయండి.",
     },
     "mr": {
         "complainant_name": "आपले नाव सांगा.",
@@ -220,7 +220,7 @@ MULTILINGUAL_QUESTIONS = {
         "opening_amount":   "अरेरे, {amount} गेले? काळजी करू नका. ",
         "opening_name":     "नमस्कार {name}. ",
         "ack":              "ठीक आहे, ",
-        "completed":        "छान! सर्व माहिती मिळाली. फॉर्म तपासून 'Approve & Download PDF' वर क्लिक करा.",
+        "completed":        "छान! सर्व माहिती मिळाली. फॉर्म तपासून 'तक्रार मंजूर करा आणि सरकारी PDF डाउनलोड करा' (Approve & Download PDF) वर क्लिक करा.",
     },
     "bn": {
         "complainant_name": "আপনার নাম বলুন।",
@@ -235,7 +235,7 @@ MULTILINGUAL_QUESTIONS = {
         "opening_amount":   "ওহ, {amount} ক্ষতি হলো? চিন্তা করবেন না। ",
         "opening_name":     "নমস্কার {name}। ",
         "ack":              "ঠিক আছে, ",
-        "completed":        "দারুণ! সব তথ্য পেয়ে গেছি। ফর্মটি দেখে 'Approve & Download PDF' এ ক্লিক করুন।",
+        "completed":        "দারুণ! সব তথ্য পেয়ে গেছি। ফর্মটি দেখে 'অনুমোদন করুন এবং সরকারি PDF ডাউনলোড করুন' (Approve & Download PDF) এ ক্লিক করুন।",
     },
     "gu": {
         "complainant_name": "તમારું નામ જણાવો.",
@@ -250,7 +250,7 @@ MULTILINGUAL_QUESTIONS = {
         "opening_amount":   "અરે, {amount} ગયા? ચિંતા ના કરો. ",
         "opening_name":     "નમસ્તે {name}. ",
         "ack":              "બરાબર, ",
-        "completed":        "સરસ! બધી વિગત મળી ગઈ છે. ફોર્મ જોઈને 'Approve & Download PDF' પર ક્લિક કરો.",
+        "completed":        "સરસ! બધી વિગત મળી ગઈ છે. ફોર્મ જોઈને 'મંજૂર કરો અને સરકારી PDF ડાઉનલોડ કરો' (Approve & Download PDF) પર ક્લિક કરો.",
     },
     "ml": {
         "complainant_name": "നിങ്ങളുടെ പേര് പറയൂ.",
@@ -265,7 +265,7 @@ MULTILINGUAL_QUESTIONS = {
         "opening_amount":   "അയ്യോ, {amount} നഷ്ടപ്പെട്ടോ? വിഷമിക്കേണ്ട. ",
         "opening_name":     "നമസ്കാരം {name}. ",
         "ack":              "ശരി, ",
-        "completed":        "കൊള്ളാം! എല്ലാ വിവരങ്ങളും ലഭിച്ചു. ഫോം കണ്ട് 'Approve & Download PDF' ക്ലിക്ക് ചെയ്യുക.",
+        "completed":        "കൊള്ളാം! എല്ലാ വിവരങ്ങളും ലഭിച്ചു. ഫോം കണ്ട് 'അംഗീകരിച്ച് ഔദ്യോഗിക PDF ഡൗൺലോഡ് ചെയ്യുക' (Approve & Download PDF) ക്ലിക്ക് ചെയ്യുക.",
     },
     "pa": {
         "complainant_name": "ਆਪਣਾ ਨਾਮ ਦੱਸੋ।",
@@ -280,7 +280,7 @@ MULTILINGUAL_QUESTIONS = {
         "opening_amount":   "ਓਹੋ, {amount} ਗੁਆਚ ਗਏ? ਚਿੰਤਾ ਨਾ ਕਰੋ। ",
         "opening_name":     "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ {name}। ",
         "ack":              "ਠੀਕ ਹੈ, ",
-        "completed":        "ਵਧੀਆ! ਸਾਰੀ ਜਾਣਕਾਰੀ ਮਿਲ ਗਈ ਹੈ। ਫਾਰਮ ਵੇਖ ਕੇ 'Approve & Download PDF' 'ਤੇ ਕਲਿੱਕ ਕਰੋ।",
+        "completed":        "ਵਧੀਆ! ਸਾਰੀ ਜਾਣਕਾਰੀ ਮਿਲ ਗਈ ਹੈ। ਫਾਰਮ ਵੇਖ ਕੇ 'ਮਨਜ਼ੂਰ ਕਰੋ ਅਤੇ ਸਰਕਾਰੀ PDF ਡਾਊਨਲੋਡ ਕਰੋ' (Approve & Download PDF) 'ਤੇ ਕਲਿੱਕ ਕਰੋ।",
     },
     "as": {
         "complainant_name": "আপোনাৰ নাম কওক।",
@@ -295,7 +295,7 @@ MULTILINGUAL_QUESTIONS = {
         "opening_amount":   "অহ, {amount} লোকচান হ’ল? চিন্তা নকৰিব, মই সহায় কৰিম। ",
         "opening_name":     "নমস্কাৰ {name}। ",
         "ack":              "ঠিক আছে, ",
-        "completed":        "বঢ়িয়া! সকলো তথ্য পোৱা গ’ল। ফৰ্মখন চাই 'Approve & Download PDF' ত ক্লিক কৰক।",
+        "completed":        "বঢ়িয়া! সকলো তথ্য পোৱা গ’ল। ফৰ্মখন চাই 'অনুমোদন কৰক আৰু চৰকাৰী PDF ডাউনলোড কৰক' (Approve & Download PDF) ত ক্লিক কৰক।",
     },
 }
 

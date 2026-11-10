@@ -101,7 +101,7 @@ all_fields = {
     "description": "Received fake call asking for OTP",
 }
 q_done = generate_followup(all_fields)
-check('T10: Complete session prompts PDF download', 'approve & download pdf' in q_done.lower() or 'all the information' in q_done.lower(), q_done)
+check('T10: Complete session prompts PDF download', 'approve & download' in q_done.lower() or 'all the information' in q_done.lower(), q_done)
 
 # ── T11: Comprehensive All-10-Language Support ─────────────────────────────────
 LANG_CHECKS = [

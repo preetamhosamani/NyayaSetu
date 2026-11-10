@@ -62,6 +62,8 @@ const SPEED_OPTIONS = [
 
 const UI_STRINGS = {
   'kn-IN': {
+    approvePdf: 'ಅನುಮೋದಿಸಿ & ಸರ್ಕಾರಿ PDF ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ',
+    approvePdfSub: 'Approve & Download Government-Ready PDF',
     appName: 'ನ್ಯಾಯಸೇತು',
     appSub: 'NYAYSETU',
     help: 'ಸಹಾಯ · Help',
@@ -111,6 +113,8 @@ const UI_STRINGS = {
     }
   },
   'hi-IN': {
+    approvePdf: 'स्वीकृत करें और सरकारी PDF डाउनलोड करें',
+    approvePdfSub: 'Approve & Download Government-Ready PDF',
     appName: 'न्यायसेतु',
     appSub: 'NYAYSETU',
     help: 'मदद · Help',
@@ -160,6 +164,8 @@ const UI_STRINGS = {
     }
   },
   'ta-IN': {
+    approvePdf: 'அங்கீகரித்து அரசு PDF-ஐ பதிவிறக்கவும்',
+    approvePdfSub: 'Approve & Download Government-Ready PDF',
     appName: 'நியாயசேது',
     appSub: 'NYAYSETU',
     help: 'உதவி · Help',
@@ -209,6 +215,8 @@ const UI_STRINGS = {
     }
   },
   'te-IN': {
+    approvePdf: 'ఆమోదించి అధికారిక PDF డౌన్‌లోడ్ చేయండి',
+    approvePdfSub: 'Approve & Download Government-Ready PDF',
     appName: 'న్యాయసేతు',
     appSub: 'NYAYSETU',
     help: 'సహాయం · Help',
@@ -258,6 +266,8 @@ const UI_STRINGS = {
     }
   },
   'mr-IN': {
+    approvePdf: 'तक्रार मंजूर करा आणि सरकारी PDF डाउनलोड करा',
+    approvePdfSub: 'Approve & Download Government-Ready PDF',
     appName: 'न्यायसेतू',
     appSub: 'NYAYSETU',
     help: 'मदत · Help',
@@ -307,6 +317,8 @@ const UI_STRINGS = {
     }
   },
   'bn-IN': {
+    approvePdf: 'অনুমোদন করুন এবং সরকারি PDF ডাউনলোড করুন',
+    approvePdfSub: 'Approve & Download Government-Ready PDF',
     appName: 'ন্যায়সেতু',
     appSub: 'NYAYSETU',
     help: 'সাহায্য · Help',
@@ -356,6 +368,8 @@ const UI_STRINGS = {
     }
   },
   'gu-IN': {
+    approvePdf: 'મંજૂર કરો અને સરકારી PDF ડાઉનલોડ કરો',
+    approvePdfSub: 'Approve & Download Government-Ready PDF',
     appName: 'ન્યાયસેતુ',
     appSub: 'NYAYSETU',
     help: 'મદદ · Help',
@@ -405,6 +419,8 @@ const UI_STRINGS = {
     }
   },
   'ml-IN': {
+    approvePdf: 'അംഗീകരിച്ച് ഔദ്യോഗിക PDF ഡൗൺലോഡ് ചെയ്യുക',
+    approvePdfSub: 'Approve & Download Government-Ready PDF',
     appName: 'ന്യായസേതു',
     appSub: 'NYAYSETU',
     help: 'സഹായം · Help',
@@ -454,6 +470,8 @@ const UI_STRINGS = {
     }
   },
   'pa-IN': {
+    approvePdf: 'ਮਨਜ਼ੂਰ ਕਰੋ ਅਤੇ ਸਰਕਾਰੀ PDF ਡਾਊਨਲੋਡ ਕਰੋ',
+    approvePdfSub: 'Approve & Download Government-Ready PDF',
     appName: 'ਨਿਆਏਸੇਤੂ',
     appSub: 'NYAYSETU',
     help: 'ਮਦਦ · Help',
@@ -503,6 +521,8 @@ const UI_STRINGS = {
     }
   },
   'as-IN': {
+    approvePdf: 'অনুমোদন কৰক আৰু চৰকাৰী PDF ডাউনলোড কৰক',
+    approvePdfSub: 'Approve & Download Government-Ready PDF',
     appName: 'ন্যায়সেতু',
     appSub: 'NYAYSETU',
     help: 'সহায় · Help',
@@ -552,6 +572,8 @@ const UI_STRINGS = {
     }
   },
   'en-IN': {
+    approvePdf: 'Approve & Download Government-Ready PDF',
+    approvePdfSub: 'Official Cybercrime Complaint PDF',
     appName: 'NyaySetu',
     appSub: 'NYAYSETU',
     help: 'Help',
@@ -1469,25 +1491,27 @@ function GrievanceScreen({ language, onLanguageChange, onBack, toast }) {
           </div>
         </div>
 
-        {/* Legal Disclaimer Box */}
-        <div className="bg-[#FEF9E7] border border-[#F6E05E] rounded-2xl p-4 flex items-start gap-2.5 text-xs text-[#92400E]">
-          <AlertTriangle className="w-4 h-4 text-[#B45309] shrink-0 mt-0.5" />
-          <p className="leading-relaxed font-medium">
-            {strings.disclaimer}
-          </p>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="space-y-2.5 pt-1">
+        {/* Primary Approval Workflow & Action Buttons (Directly below Extracted Details Form) */}
+        <div className="space-y-3 pt-1">
           <button
             onClick={downloadPdf}
             disabled={pdfLoading}
-            className="w-full bg-[#1D3557] hover:bg-[#2A4A73] text-white py-3.5 px-6 rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+            className="w-full bg-[#1D3557] hover:bg-[#2A4A73] text-white py-4 px-6 rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all disabled:opacity-50"
           >
             {pdfLoading ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Generating PDF…</>
+              <><Loader2 className="w-5 h-5 animate-spin" /> Generating PDF…</>
             ) : (
-              <><Download className="w-4 h-4" /> {strings.printPdf} <span className="text-xs font-normal opacity-80">(Print / Save)</span></>
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="flex items-center gap-2 text-sm font-extrabold tracking-wide">
+                  <Download className="w-4 h-4 shrink-0" />
+                  <span>{strings.approvePdf || 'Approve & Download Government-Ready PDF'}</span>
+                </div>
+                {strings.approvePdfSub && (
+                  <span className="text-[11px] font-normal text-white/80 mt-0.5">
+                    {strings.approvePdfSub}
+                  </span>
+                )}
+              </div>
             )}
           </button>
 
@@ -1508,6 +1532,14 @@ function GrievanceScreen({ language, onLanguageChange, onBack, toast }) {
               <span>{strings.startOver}</span>
             </button>
           </div>
+        </div>
+
+        {/* Legal Disclaimer Box (Positioned below Action Buttons) */}
+        <div className="bg-[#FEF9E7] border border-[#F6E05E] rounded-2xl p-4 flex items-start gap-2.5 text-xs text-[#92400E]">
+          <AlertTriangle className="w-4 h-4 text-[#B45309] shrink-0 mt-0.5" />
+          <p className="leading-relaxed font-medium">
+            {strings.disclaimer}
+          </p>
         </div>
 
       </div>
@@ -1639,14 +1671,15 @@ function GrievanceScreen({ language, onLanguageChange, onBack, toast }) {
             })}
           </div>
 
-          {/* Quick jump to draft button if fields exist */}
-          {filledCount >= 3 && (
-            <div className="pt-2 border-t border-[#1D3557]/10 text-center">
+          {/* Quick Action Button directly below the extracted form card */}
+          {filledCount >= 2 && (
+            <div className="pt-2.5 border-t border-[#1D3557]/10 space-y-2">
               <button
                 onClick={() => setSubscreen('draft')}
-                className="text-xs font-bold text-[#1D3557] underline hover:opacity-80"
+                className="w-full bg-[#1D3557] hover:bg-[#2A4A73] text-white py-2.5 px-4 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition-all"
               >
-                View Draft Form ({filledCount}/8 details collected) →
+                <Download className="w-3.5 h-3.5" />
+                <span>{strings.approvePdf || 'Approve & Download Government-Ready PDF'} ({filledCount}/8)</span>
               </button>
             </div>
           )}
@@ -1771,6 +1804,34 @@ function SimplifierScreen({ language, onLanguageChange, onBack, toast }) {
   // Recording State
   const [recording, setRecording] = useState(false);
   const [recTimer, setRecTimer] = useState(0);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      handleUploadFile(files[0]);
+    }
+  };
   const audioCtxRef = useRef(null);
   const streamRef = useRef(null);
   const processorRef = useRef(null);
@@ -2130,8 +2191,19 @@ function SimplifierScreen({ language, onLanguageChange, onBack, toast }) {
         {/* LEFT COLUMN: Upload & Categorized Breakdown */}
         <div className="lg:col-span-7 space-y-4">
 
-          {/* Upload Dropzone */}
-          <Card className="border-2 border-dashed border-[#1D3557]/20 hover:border-[#1D3557]/40 bg-white text-center p-6">
+          {/* Upload Dropzone with Interactive Drag & Drop + Browse Files */}
+          <div
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 ${
+              isDragging
+                ? 'border-[#1D3557] bg-[#EAF2F8] ring-4 ring-[#1D3557]/20 scale-[1.01]'
+                : 'border-[#1D3557]/25 hover:border-[#1D3557]/50 bg-white hover:bg-[#FDFBF7]'
+            }`}
+          >
             <input
               ref={fileInputRef}
               type="file"
@@ -2141,26 +2213,64 @@ function SimplifierScreen({ language, onLanguageChange, onBack, toast }) {
                 if (e.target.files?.[0]) handleUploadFile(e.target.files[0]);
               }}
             />
-            <div className="flex flex-col items-center justify-center gap-2">
-              <div className="w-12 h-12 rounded-xl bg-[#EAF2F8] text-[#1D3557] flex items-center justify-center">
-                <UploadCloud className="w-6 h-6 text-[#1D3557]" />
+            <div className="flex flex-col items-center justify-center gap-2.5">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
+                isDragging ? 'bg-[#1D3557] text-white scale-110 shadow-lg' : 'bg-[#EAF2F8] text-[#1D3557]'
+              }`}>
+                <UploadCloud className="w-7 h-7" />
               </div>
-              <h4 className="text-sm font-bold text-[#1D3557]">
-                Upload legal notice (PDF, JPG, PNG)
-              </h4>
-              <p className="text-xs text-[#1D3557]/60">
-                RapidOCR extracts regional text and plain-language summaries automatically
-              </p>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="mt-2 px-4 py-2 bg-[#1D3557] hover:bg-[#2A4A73] text-white rounded-xl text-xs font-bold transition-all disabled:opacity-40"
-              >
-                {uploading ? 'Analyzing document…' : 'Choose File'}
-              </button>
+
+              {isDragging ? (
+                <div>
+                  <h4 className="text-base font-extrabold text-[#1D3557]">
+                    Drop your legal notice here
+                  </h4>
+                  <p className="text-xs font-semibold text-[#1D3557]/70 mt-1">
+                    Release to immediately analyze document with RapidOCR
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <h4 className="text-sm font-extrabold text-[#1D3557]">
+                    Drag &amp; drop legal notice here, or{' '}
+                    <span className="text-[#1D3557] underline">Browse Files</span>
+                  </h4>
+                  <p className="text-xs text-[#1D3557]/60 mt-1">
+                    Accepts PDF, PNG, and JPG images (up to 15MB)
+                  </p>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                  disabled={uploading}
+                  className="px-5 py-2.5 bg-[#1D3557] hover:bg-[#2A4A73] text-white rounded-xl text-xs font-bold shadow-sm transition-all disabled:opacity-40 flex items-center gap-1.5"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>{uploading ? 'Analyzing document…' : 'Browse Files'}</span>
+                </button>
+
+                {selectedFile && !uploading && (
+                  <span className="text-xs font-semibold text-[#1D3557]/80 bg-[#EAF2F8] px-3 py-1.5 rounded-xl truncate max-w-[200px]">
+                    📄 {selectedFile.name}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3 text-[10px] text-[#1D3557]/50 font-bold uppercase tracking-wider pt-1">
+                <span>PDF Documents</span>
+                <span>•</span>
+                <span>PNG / JPG Scans</span>
+                <span>•</span>
+                <span>RapidOCR</span>
+              </div>
             </div>
-          </Card>
+          </div>
 
           {/* Audio Summary Card */}
           {docResult?.audio_base64 && !uploading && (
