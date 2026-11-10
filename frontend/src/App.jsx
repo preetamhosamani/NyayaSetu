@@ -26,6 +26,7 @@ import {
   FileCheck, HelpCircle, UploadCloud, Square, Pencil, ChevronRight,
   ArrowLeft, Lock, AlertTriangle, Share2, Printer, Check
 } from 'lucide-react';
+import RiskCard from './components/RiskCard';
 
 const API_BASE = '/api';
 
@@ -1047,6 +1048,51 @@ function GrievanceScreen({ language, onLanguageChange, onBack, toast }) {
   const [editValue, setEditValue] = useState('');
   const [showFullNarrative, setShowFullNarrative] = useState(false);
 
+  // Financial Risk Assessment & Legal Guidance State
+  const [riskData, setRiskData] = useState(null);
+  const [riskLoading, setRiskLoading] = useState(false);
+
+  // Fetch deterministic Risk Score & Legal Guidance when incident details are present
+  useEffect(() => {
+    if (!entities.amount_lost && !entities.incident_type) {
+      setRiskData(null);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchRisk = async () => {
+      try {
+        setRiskLoading(true);
+        const cleanAmt = String(entities.amount_lost || '0').replace(/[^0-9.]/g, '');
+        const payload = {
+          amount_lost: parseFloat(cleanAmt) || 0,
+          hours_elapsed: 1.5, // Golden Hour window for live grievance reporting
+          scam_type: entities.incident_type || 'general_fraud',
+          is_recurring: false
+        };
+
+        const res = await fetch(`${API_BASE}/assess-risk`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (isMounted && json.data) {
+            setRiskData(json.data);
+          }
+        }
+      } catch (err) {
+        console.warn('Risk assessment fetch failed:', err);
+      } finally {
+        if (isMounted) setRiskLoading(false);
+      }
+    };
+
+    fetchRisk();
+    return () => { isMounted = false; };
+  }, [entities.amount_lost, entities.incident_type, entities.incident_date]);
+
   // Refs
   const audioCtxRef = useRef(null);
   const streamRef = useRef(null);
@@ -1334,6 +1380,7 @@ function GrievanceScreen({ language, onLanguageChange, onBack, toast }) {
     setInputText('');
     setLastUserTranscript('');
     setLastAssistantAudioB64(null);
+    setRiskData(null);
     setSubscreen('intake');
     toast('Session reset — ready for a new complaint.', 'info');
   };
@@ -1491,6 +1538,11 @@ function GrievanceScreen({ language, onLanguageChange, onBack, toast }) {
           </div>
         </div>
 
+        {/* Dynamic Fraud Risk Assessment & Statutory Legal Meter */}
+        {riskData && (
+          <RiskCard riskData={riskData} language={language} />
+        )}
+
         {/* Primary Approval Workflow & Action Buttons (Directly below Extracted Details Form) */}
         <div className="space-y-3 pt-1">
           <button
@@ -1634,9 +1686,20 @@ function GrievanceScreen({ language, onLanguageChange, onBack, toast }) {
         {/* Details So Far Summary Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-[#1D3557]/15 p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-[#1D3557]/10 pb-2">
-            <span className="text-[11px] font-black tracking-widest text-[#1D3557]/70 uppercase">
-              {strings.detailsSoFar}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-black tracking-widest text-[#1D3557]/70 uppercase">
+                {strings.detailsSoFar}
+              </span>
+              {riskData && (
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  riskData.risk_score >= 71 ? 'bg-red-100 text-red-700 border border-red-300 animate-pulse' :
+                  riskData.risk_score >= 31 ? 'bg-amber-100 text-amber-700 border border-amber-300' :
+                  'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                }`}>
+                  Risk: {riskData.risk_score}/100
+                </span>
+              )}
+            </div>
             {lastAssistantAudioB64 && (
               <button
                 onClick={() => playAudioB64(lastAssistantAudioB64)}

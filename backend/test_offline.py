@@ -335,6 +335,63 @@ check("T25a: Long Kannada OTP speech classified as OTP Fraud / Phishing (not raw
       otp_full_ents.get("incident_type") == "OTP Fraud / Phishing",
       otp_full_ents.get("incident_type"))
 
+# ── T26: Financial Risk Scoring & Legal Guidance Taxonomy ─────────────────────
+from utils.risk_scorer import calculate_fraud_risk
+
+# Critical Golden Hour Case (e.g. ₹50,000 lost 1.5 hours ago via OTP Phishing)
+critical_assessment = calculate_fraud_risk({
+    "amount_lost": "₹50,000",
+    "hours_elapsed": 1.5,
+    "scam_type": "OTP Fraud / Phishing",
+    "is_recurring": False
+})
+check("T26a: Critical risk score >= 71", critical_assessment["risk_score"] >= 71, str(critical_assessment["risk_score"]))
+check("T26b: Critical risk tier is High / Critical Risk", critical_assessment["risk_tier"] == "High / Critical Risk", critical_assessment["risk_tier"])
+check("T26c: Golden hour active for <= 2.0 hours", critical_assessment["golden_hour_active"] is True)
+check("T26d: Immediate recommendations cite 1930 and bank freeze",
+      any("1930" in r for r in critical_assessment["actionable_recommendations"]) and
+      any("freeze" in r for r in critical_assessment["actionable_recommendations"]))
+check("T26e: Evidence checklist includes UTR / UPI Ref ID",
+      any("UTR" in e or "UPI" in e for e in critical_assessment["evidence_checklist"]))
+
+# Legal Guidance Taxonomy Verification
+legal_info = critical_assessment["legal_guidance"]
+check("T26f: BNS Section 318(4) present for cheating > ₹5,000",
+      any("318(4)" in s for s in legal_info["bns_sections"]))
+check("T26g: IT Act Section 66D present for personation/phishing",
+      any("66D" in s for s in legal_info["it_act_sections"]))
+check("T26h: Offence classification indicates Cognizable / Non-Bailable",
+      "Cognizable" in legal_info["offence_classification"])
+check("T26i: Legal disclaimer mentions DLSA",
+      "DLSA" in legal_info["legal_disclaimer"])
+
+# Moderate Risk Case (e.g. ₹15,000 lost 12 hours ago)
+moderate_assessment = calculate_fraud_risk({
+    "amount_lost": 15000,
+    "hours_elapsed": 12.0,
+    "scam_type": "malicious link / apk scam"
+})
+check("T26j: Moderate risk tier is Moderate Risk", moderate_assessment["risk_tier"] == "Moderate Risk", moderate_assessment["risk_tier"])
+check("T26k: Malicious link includes Section 43/66 IT Act",
+      any("43" in s or "66" in s for s in moderate_assessment["legal_guidance"]["it_act_sections"]))
+
+# Low Risk Case (e.g. ₹2,000 lost 4 days ago)
+low_assessment = calculate_fraud_risk({
+    "amount_lost": 2000,
+    "hours_elapsed": 96.0,
+    "scam_type": "general_fraud"
+})
+check("T26l: Low risk tier is Low Risk", low_assessment["risk_tier"] == "Low Risk", low_assessment["risk_tier"])
+
+# Loan App Extortion Case
+loan_assessment = calculate_fraud_risk({
+    "amount_lost": 10000,
+    "hours_elapsed": 24.0,
+    "scam_type": "fake loan app fraud / extortion"
+})
+check("T26m: Loan extortion includes Section 308/351 BNS (Extortion)",
+      any("308" in s or "Extortion" in s for s in loan_assessment["legal_guidance"]["bns_sections"]))
+
 # ─── Summary ──────────────────────────────────────────────────────────────────
 print()
 total = PASSED + FAILED

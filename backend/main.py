@@ -16,7 +16,7 @@ import struct
 import base64
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Any
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,6 +33,7 @@ from utils.mock_fallbacks import (
     MOCK_SIMPLIFIED_POINTS,
 )
 from utils.pdf_generator import generate_complaint_pdf
+from utils.risk_scorer import calculate_fraud_risk
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
 
@@ -506,6 +507,14 @@ class ChatDocumentRequest(BaseModel):
     user_message:  str
     language_code: str            = "en-IN"
     history:       Optional[list] = None
+
+
+class RiskPayload(BaseModel):
+    """Structured incident payload for /api/assess-risk."""
+    amount_lost:   Any        = 0.0   # float, int, or '₹50,000' string
+    hours_elapsed: float      = 24.0
+    scam_type:     str        = "general_fraud"
+    is_recurring:  bool       = False
 
 
 # ─── SPOKEN DIGIT & CODE-MIXED PHONE PARSER ──────────────────────────────────
@@ -2462,6 +2471,23 @@ async def generate_pdf(data: ComplaintData):
             )
         except Exception as inner:
             raise HTTPException(status_code=500, detail=str(inner))
+
+
+# ── POST /api/assess-risk ────────────────────────────────────────────────────
+
+@app.post("/api/assess-risk")
+async def assess_risk(payload: RiskPayload):
+    """
+    Accepts a structured incident payload and returns a composite Fraud & Grievance
+    Risk Score (0-100) with tier classification, urgency markers, actionable
+    recommendations, evidence checklist, and legal section guidance (BNS + IT Act).
+    """
+    try:
+        result = calculate_fraud_risk(payload.model_dump())
+        return {"status": "success", "data": result}
+    except Exception as exc:
+        logger.error(f"Risk assessment failed: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 # ── POST /api/simplify-legal ─────────────────────────────────────────────────
